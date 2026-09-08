@@ -1,4 +1,5 @@
 const $ = (sel) => document.querySelector(sel);
+const $$ = (sel) => Array.from(document.querySelectorAll(sel));
 
 const state = {
   tournaments: [],
@@ -11,6 +12,10 @@ const state = {
   refQuery: '',
   assignQuery: '',
   assignPick: null,
+  matchQuery: '',
+  matchCat: 'الكل',
+  matchStatus: 'الكل',
+  collapsed: new Set(),
 };
 
 const STATUS = {
@@ -412,7 +417,28 @@ document.addEventListener('input', (e) => {
     state.assignQuery = e.target.value;
     renderPicker();
   }
+  if (e.target.id === 'match-search') {
+    state.matchQuery = e.target.value;
+    renderBoard();
+  }
 });
+
+// شرائح تصفية المباريات + التبديل بين الحالات + طي الأيام
+document.addEventListener('click', (e) => {
+  const cat = e.target.closest('[data-mcat]');
+  if (cat) { state.matchCat = cat.dataset.mcat; return renderBoard(); }
+  const st = e.target.closest('[data-mst]');
+  if (st) { state.matchStatus = st.dataset.mst; $$('.schip').forEach((el) => el.classList.toggle('on', el === st)); return renderBoard(); }
+});
+
+// نستمع لتغيّر <details> عشان نتذكر أي أيام مطويّة
+document.addEventListener('toggle', (e) => {
+  if (!e.target.matches?.('.dayg')) return;
+  const key = e.target.dataset.day;
+  if (!key) return;
+  if (e.target.open) state.collapsed.delete(key);
+  else state.collapsed.add(key);
+}, true);
 
 // اختيار حكم من المنتقي
 document.addEventListener('click', (e) => {
@@ -668,6 +694,72 @@ function renderReferees() {
     .join('');
 }
 
+/* ------------- تصفية وتجميع بطاقات المباريات ------------- */
+const dayKey = (m) => (m.startTime || '').slice(0, 10) || 'بلا موعد';
+
+const fmtDay = (key) => {
+  if (key === 'بلا موعد') return key;
+  return new Intl.DateTimeFormat('ar-SA-u-ca-gregory', {
+    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
+    timeZone: 'Asia/Riyadh',
+  }).format(new Date(key));
+};
+
+const fmtHm = (iso) => {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '—';
+  return new Intl.DateTimeFormat('ar-SA-u-ca-gregory-nu-latn', {
+    hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Riyadh',
+  }).format(d).replace(/AM|am|ص/, 'ص').replace(/PM|pm|م/, 'م');
+};
+
+function actionsFor(m, a) {
+  if (!a) return `<button class="btn small" data-assign="${m.id}">تكليف حكم</button>`;
+  if (['sent', 'pending'].includes(a.status)) {
+    return [
+      a.token ? `<button class="btn small" data-wa="${a.id}">واتساب</button>` : '',
+      a.token ? `<button class="btn ghost small" data-copy="${a.id}">نسخ</button>` : '',
+      `<button class="btn ghost small" data-mark="${a.id}" data-value="accepted">قبول</button>`,
+      `<button class="btn danger small" data-mark="${a.id}" data-value="declined">اعتذار</button>`,
+      `<button class="btn ghost small" data-cancel="${a.id}">إلغاء</button>`,
+    ].filter(Boolean).join('');
+  }
+  if (a.status === 'accepted') {
+    return `<button class="btn danger small" data-cancel="${a.id}">إلغاء التكليف</button>`;
+  }
+  return `<button class="btn small" data-assign="${m.id}">تكليف حكم آخر</button>`;
+}
+
+function refereeCell(a) {
+  if (!a) return '<span class="muted">—</span>';
+  const r = state.referees.find((x) => x.id === a.refereeId);
+  const label = r ? `${r.refereeNumber ? '<b>' + r.refereeNumber + '</b> ' : ''}${r.name}` : 'حكم محذوف';
+  return `<div>${label}</div><div class="chip-status s-${a.status}">${STATUS[a.status] || a.status}</div>`;
+}
+
+function filteredMatches() {
+  const q = (state.matchQuery || '').trim().toLowerCase();
+  const catF = state.matchCat || 'الكل';
+  const stF = state.matchStatus || 'الكل';
+  return state.matches.filter((m) => {
+    if (catF !== 'الكل' && (m.category || '') !== catF) return false;
+    const a = liveAssignment(m.id);
+    const s = a?.status || 'empty';
+    if (stF !== 'الكل') {
+      if (stF === 'empty' && a) return false;
+      if (stF === 'sent' && !['sent', 'pending'].includes(s)) return false;
+      if (stF === 'accepted' && s !== 'accepted') return false;
+      if (stF === 'declined' && !['declined', 'expired'].includes(s)) return false;
+    }
+    if (q) {
+      const hay = `${m.clubA || m.playerA} ${m.clubB || m.playerB} ${m.round || ''} ${m.table || ''}`.toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  });
+}
+
 function renderBoard() {
   const board = $('#board');
   const tournament = state.tournaments.find((t) => t.id === state.tournamentId);
@@ -676,6 +768,7 @@ function renderBoard() {
   $('#btn-sb-import').hidden = !tournament;
   $('#btn-file-import').hidden = !tournament;
   $('#btn-export').hidden = !tournament;
+  $('#board-toolbar').hidden = !tournament || !state.matches.length;
   $('#tally').hidden = !tournament;
   $('#board-title').textContent = tournament ? tournament.name : 'اختر بطولة للبدء';
 
@@ -689,61 +782,75 @@ function renderBoard() {
     return;
   }
 
-  board.innerHTML = state.matches
-    .map((m) => {
-      const a = liveAssignment(m.id);
-      const st = a?.status || 'empty';
-      const facts = [
-        fmtTime(m.startTime),
-        m.table ? `طاولة ${m.table}` : '',
-        m.round,
-        m.category,
-      ]
-        .filter(Boolean)
-        .join(' · ');
+  // شرائح الفئات — تُبنى من الفئات الموجودة فعلاً
+  const cats = ['الكل', ...new Set(state.matches.map((m) => m.category).filter(Boolean))];
+  $('#board-cats').innerHTML = cats
+    .map((c) => `<button class="fchip ${(state.matchCat || 'الكل') === c ? 'on' : ''}" data-mcat="${c}">${c}</button>`)
+    .join('');
 
-      const status = a
-        ? `<div class="status">${refereeName(a.refereeId)} — <b>${STATUS[a.status]}</b>${
-            a.error ? `<br><span class="facts">${a.error}</span>` : ''
-          }</div>`
-        : '<div class="status">لم يُكلَّف حكم بعد</div>';
+  const filtered = filteredMatches();
+  if (!filtered.length) {
+    board.innerHTML = '<p class="empty">لا توجد مباريات تطابق التصفية.</p>';
+    updateTally();
+    return;
+  }
 
-      const btns = [];
-      if (!a) {
-        btns.push(`<button class="btn small" data-assign="${m.id}">تكليف حكم</button>`);
-      } else if (['sent', 'pending'].includes(a.status)) {
-        // بانتظار الرد: أرسل الدعوة، أو سجّل الرد يدوياً، أو ألغِ
-        if (a.token) {
-          btns.push(
-            `<button class="btn small" data-wa="${a.id}">إرسال واتساب</button>`,
-            `<button class="btn ghost small" data-copy="${a.id}">نسخ الرابط</button>`
-          );
-        }
-        btns.push(
-          `<button class="btn ghost small" data-mark="${a.id}" data-value="accepted">تسجيل قبول</button>`,
-          `<button class="btn danger small" data-mark="${a.id}" data-value="declined">تسجيل اعتذار</button>`,
-          `<button class="btn ghost small" data-cancel="${a.id}">إلغاء التكليف</button>`
-        );
-      } else if (a.status === 'accepted') {
-        // قَبِل الحكم: الإلغاء هو الطريق الوحيد لتحرير المباراة لحكم آخر
-        btns.push(`<button class="btn danger small" data-cancel="${a.id}">إلغاء التكليف</button>`);
-      } else {
-        // اعتذر أو انتهت المهلة أو أُلغي: المباراة متاحة لحكم جديد
-        btns.push(`<button class="btn small" data-assign="${m.id}">تكليف حكم آخر</button>`);
-      }
-      const actions = btns.join('\n');
+  // نجمّع باليوم ثم نعرض جدولاً مضغوطاً — أسهل قراءة من بطاقة لكل مباراة
+  const days = new Map();
+  for (const m of filtered) {
+    const k = dayKey(m);
+    if (!days.has(k)) days.set(k, []);
+    days.get(k).push(m);
+  }
+  const sortedDays = [...days.keys()].sort();
 
-      return `<article class="match" data-state="${st}">
-        <div>
-          <div class="players">${m.clubA || m.playerA || ''} × ${m.clubB || m.playerB || ''}</div>
-          <div class="facts">${facts}</div>
-          ${status}
+  board.innerHTML = sortedDays
+    .map((k) => {
+      const rows = days.get(k).sort((a, b) => {
+        const t = String(a.startTime).localeCompare(String(b.startTime));
+        return t !== 0 ? t : String(a.table).localeCompare(String(b.table));
+      });
+      const collapsed = state.collapsed?.has(k) ? '' : ' open';
+      return `<details class="dayg" data-day="${k}"${collapsed}>
+        <summary>
+          <span class="daylbl">${fmtDay(k)}</span>
+          <span class="daycount">${rows.length} مباراة</span>
+        </summary>
+        <div class="mtblwrap">
+          <table class="mtbl">
+            <thead>
+              <tr>
+                <th>الوقت</th>
+                <th>الطاولة</th>
+                <th class="wide">المباراة</th>
+                <th>الفئة</th>
+                <th>الدور</th>
+                <th class="wide">الحكم</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rows.map((m) => {
+                const a = liveAssignment(m.id);
+                const st = a?.status || 'empty';
+                return `<tr data-state="${st}">
+                  <td class="tm">${fmtHm(m.startTime)}</td>
+                  <td>${m.table || '—'}</td>
+                  <td class="wide"><b>${m.clubA || m.playerA || ''}</b> × <b>${m.clubB || m.playerB || ''}</b></td>
+                  <td>${m.category || '—'}</td>
+                  <td>${m.round || '—'}</td>
+                  <td class="wide ref">${refereeCell(a)}</td>
+                  <td class="acts">
+                    ${actionsFor(m, a)}
+                    <button class="icn" data-edit-match="${m.id}" title="تعديل">✎</button>
+                    <button class="icn" data-del-match="${m.id}" title="حذف">🗑</button>
+                  </td>
+                </tr>`;
+              }).join('')}
+            </tbody>
+          </table>
         </div>
-        <div class="actions">${actions}
-          <button class="btn ghost small" data-edit-match="${m.id}">تعديل</button>
-          <button class="btn ghost small" data-del-match="${m.id}">حذف المباراة</button>
-        </div>
-      </article>`;
+      </details>`;
     })
     .join('');
 
