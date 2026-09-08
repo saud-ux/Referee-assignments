@@ -91,13 +91,17 @@ h1, h2, h3, .tally b {
   justify-content: space-between;
   padding: 12px 14px;
   border-bottom: 1px solid var(--line);
-  cursor: pointer;
-  list-style: none;
   gap: 8px;
   flex-wrap: wrap;
 }
-.panel-head::-webkit-details-marker { display: none; }
 .panel-head h2 { font-size: 19px; }
+
+/* لما الرأس داخل <summary> يصير قابل للطي */
+summary.panel-head {
+  cursor: pointer;
+  list-style: none;
+}
+summary.panel-head::-webkit-details-marker { display: none; }
 
 .accord .ph-title {
   display: flex;
