@@ -169,7 +169,6 @@ const REFEREE_HEADERS = {
   name: ['الاسم', 'الحكم', 'name'],
   phone: ['رقم الجوال', 'الجوال', 'الهاتف', 'phone', 'mobile'],
   city: ['المدينة', 'city'],
-  level: ['الدرجة', 'المستوى', 'level'],
 };
 
 function mapHeader(cell, dict) {
@@ -270,7 +269,7 @@ async function handleRefFilePicked(file) {
         (r) => `<div class="sb-row">
           <div class="body">
             <div class="teams">${r.name}</div>
-            <div class="meta">${[r.phone, r.city, r.level].filter(Boolean).join(' · ')}</div>
+            <div class="meta">${[r.phone, r.city].filter(Boolean).join(' · ')}</div>
           </div>
         </div>`
       )
@@ -302,9 +301,9 @@ function downloadTemplate() {
 
 function downloadRefereesTemplate() {
   if (typeof XLSX === 'undefined') return toast('مكتبة Excel لم تُحمَّل بعد');
-  const data = [['الاسم', 'رقم الجوال', 'المدينة', 'الدرجة']];
+  const data = [['الاسم', 'رقم الجوال', 'المدينة']];
   const ws = XLSX.utils.aoa_to_sheet(data);
-  ws['!cols'] = [{ wch: 22 }, { wch: 14 }, { wch: 12 }, { wch: 10 }];
+  ws['!cols'] = [{ wch: 22 }, { wch: 14 }, { wch: 12 }];
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'الحكّام');
   XLSX.writeFile(wb, 'قالب-الحكّام.xlsx');
@@ -371,7 +370,7 @@ function renderReferees() {
     .map(
       (r) => `<li>
         <span class="pick">${r.name}
-          <span class="sub">${r.phone}${r.level ? ' — ' + r.level : ''}</span>
+          <span class="sub">${r.phone}${r.city ? ' — ' + r.city : ''}</span>
         </span>
         <button class="del" data-del-referee="${r.id}" title="حذف">×</button>
       </li>`
@@ -638,7 +637,7 @@ document.addEventListener('submit', async (e) => {
         return;
       }
       const text = state.refFileRows
-        .map((r) => [r.name, r.phone, r.city, r.level].join(','))
+        .map((r) => [r.name, r.phone, r.city].join(','))
         .join('\n');
       const r = await api('/referees/import', { method: 'POST', body: { text } });
       await loadSidebar();

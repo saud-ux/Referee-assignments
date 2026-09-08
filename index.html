@@ -105,10 +105,7 @@
     </div>
     <label>الاسم <input name="name" required /></label>
     <label>رقم الجوال <input name="phone" required inputmode="tel" placeholder="05xxxxxxxx" /></label>
-    <div class="row">
-      <label>المدينة <input name="city" /></label>
-      <label>الدرجة <input name="level" placeholder="دولي / أول / ثاني" /></label>
-    </div>
+    <label>المدينة <input name="city" /></label>
     <menu>
       <button value="cancel" class="btn ghost" formnovalidate>إلغاء</button>
       <button value="save" class="btn">حفظ الحكم</button>
@@ -221,7 +218,6 @@
             <th>الاسم</th>
             <th>رقم الجوال</th>
             <th>المدينة</th>
-            <th>الدرجة</th>
           </tr>
         </thead>
       </table>
@@ -257,7 +253,7 @@
       <button type="button" class="dlg-close" data-close aria-label="إغلاق">×</button>
     </div>
     <p class="hint">كل سطر يمثل حكماً. الحقول مفصولة بفواصل بهذا الترتيب:<br>
-      <code>الاسم, الجوال, المدينة (اختياري), الدرجة (اختياري)</code>
+      <code>الاسم, الجوال, المدينة (اختياري)</code>
     </p>
     <label>الصق البيانات
       <textarea name="text" rows="8" required></textarea>

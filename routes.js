@@ -36,14 +36,13 @@ router.get('/referees', async (req, res) => {
 });
 
 router.post('/referees', async (req, res) => {
-  const { name, phone, city = '', level = '' } = req.body || {};
+  const { name, phone, city = '' } = req.body || {};
   if (!name || !phone) return bad(res, 'الاسم ورقم الجوال مطلوبان');
   const row = {
     id: newId(),
     name: String(name).trim(),
     phone: wa.normalizePhone(phone),
     city: String(city).trim(),
-    level: String(level).trim(),
     active: true,
     createdAt: now(),
   };
@@ -52,7 +51,7 @@ router.post('/referees', async (req, res) => {
 
 router.patch('/referees/:id', async (req, res) => {
   const patch = {};
-  for (const k of ['name', 'city', 'level', 'active']) {
+  for (const k of ['name', 'city', 'active']) {
     if (k in (req.body || {})) patch[k] = req.body[k];
   }
   if (req.body?.phone) patch.phone = wa.normalizePhone(req.body.phone);
@@ -77,7 +76,7 @@ router.post('/referees/import', async (req, res) => {
   const rows = parseImportLines(req.body?.text);
   const added = [];
   const skipped = [];
-  for (const [name, phone, city = '', level = ''] of rows) {
+  for (const [name, phone, city = ''] of rows) {
     if (!name || !phone) {
       skipped.push({ line: [name, phone].join(','), reason: 'الاسم أو الجوال ناقص' });
       continue;
@@ -88,7 +87,6 @@ router.post('/referees/import', async (req, res) => {
         name: name.trim(),
         phone: wa.normalizePhone(phone),
         city: city.trim(),
-        level: level.trim(),
         active: true,
         createdAt: now(),
       };
