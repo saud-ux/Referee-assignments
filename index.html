@@ -105,6 +105,7 @@
       <button type="button" class="dlg-close" data-close aria-label="إغلاق">×</button>
     </div>
     <label>الاسم <input name="name" required /></label>
+    <label>رقم الحكم <input name="refereeNumber" placeholder="مثل: 12" /></label>
     <label>رقم الجوال <input name="phone" required inputmode="tel" placeholder="05xxxxxxxx" /></label>
     <label>المدينة <input name="city" /></label>
     <menu>
@@ -270,6 +271,7 @@
         <thead>
           <tr>
             <th>الاسم</th>
+            <th>رقم الحكم</th>
             <th>رقم الجوال</th>
             <th>المدينة</th>
           </tr>
@@ -307,7 +309,7 @@
       <button type="button" class="dlg-close" data-close aria-label="إغلاق">×</button>
     </div>
     <p class="hint">كل سطر يمثل حكماً. الحقول مفصولة بفواصل بهذا الترتيب:<br>
-      <code>الاسم, الجوال, المدينة (اختياري)</code>
+      <code>الاسم, رقم الحكم (اختياري), الجوال, المدينة (اختياري)</code>
     </p>
     <label>الصق البيانات
       <textarea name="text" rows="8" required></textarea>

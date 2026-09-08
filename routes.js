@@ -78,16 +78,25 @@ router.get('/status', (req, res) => {
 /* ------------------------- الحكّام ------------------------- */
 router.get('/referees', async (req, res) => {
   const rows = await store.list('referees');
-  rows.sort((a, b) => a.name.localeCompare(b.name, 'ar'));
+  rows.sort((a, b) => {
+    // نرتّب برقم الحكم رقمياً إن وُجد، وإلا بالاسم أبجدياً
+    const na = Number(a.refereeNumber);
+    const nb = Number(b.refereeNumber);
+    if (!Number.isNaN(na) && !Number.isNaN(nb)) return na - nb;
+    if (!Number.isNaN(na)) return -1;
+    if (!Number.isNaN(nb)) return 1;
+    return a.name.localeCompare(b.name, 'ar');
+  });
   res.json(rows);
 });
 
 router.post('/referees', async (req, res) => {
-  const { name, phone, city = '' } = req.body || {};
+  const { name, phone, city = '', refereeNumber = '' } = req.body || {};
   if (!name || !phone) return bad(res, 'الاسم ورقم الجوال مطلوبان');
   const row = {
     id: newId(),
     name: String(name).trim(),
+    refereeNumber: String(refereeNumber).trim(),
     phone: wa.normalizePhone(phone),
     city: String(city).trim(),
     active: true,
@@ -98,8 +107,8 @@ router.post('/referees', async (req, res) => {
 
 router.patch('/referees/:id', async (req, res) => {
   const patch = {};
-  for (const k of ['name', 'city', 'active']) {
-    if (k in (req.body || {})) patch[k] = req.body[k];
+  for (const k of ['name', 'city', 'active', 'refereeNumber']) {
+    if (k in (req.body || {})) patch[k] = String(req.body[k] ?? '').trim();
   }
   if (req.body?.phone) patch.phone = wa.normalizePhone(req.body.phone);
   const row = await store.update('referees', req.params.id, patch);
@@ -123,7 +132,7 @@ router.post('/referees/import', async (req, res) => {
   const rows = parseImportLines(req.body?.text);
   const added = [];
   const skipped = [];
-  for (const [name, phone, city = ''] of rows) {
+  for (const [name, refereeNumber = '', phone, city = ''] of rows) {
     if (!name || !phone) {
       skipped.push({ line: [name, phone].join(','), reason: 'الاسم أو الجوال ناقص' });
       continue;
@@ -132,6 +141,7 @@ router.post('/referees/import', async (req, res) => {
       const row = {
         id: newId(),
         name: name.trim(),
+        refereeNumber: refereeNumber.trim(),
         phone: wa.normalizePhone(phone),
         city: city.trim(),
         active: true,

@@ -129,7 +129,7 @@ function renderPicker() {
 
   const rows = q
     ? state.referees.filter((r) =>
-        [r.name, r.phone, r.city].some((v) => String(v || '').toLowerCase().includes(q))
+        [r.name, r.phone, r.city, r.refereeNumber].some((v) => String(v || '').toLowerCase().includes(q))
       )
     : state.referees;
 
@@ -151,7 +151,7 @@ function renderPicker() {
         state.assignPick === r.id ? ' on' : ''
       }" data-pick-ref="${r.id}">
         <span class="who">
-          <span class="nm">${r.name}</span>
+          <span class="nm">${r.refereeNumber ? '<b>' + r.refereeNumber + '</b> — ' : ''}${r.name}</span>
           <span class="meta">${[r.phone, r.city].filter(Boolean).join(' · ')}</span>
         </span>
         ${tag}
@@ -290,6 +290,7 @@ const MATCH_HEADERS = {
 
 const REFEREE_HEADERS = {
   name: ['الاسم', 'الحكم', 'name'],
+  refereeNumber: ['رقم الحكم', 'الرقم', 'number', 'refereeNumber'],
   phone: ['رقم الجوال', 'الجوال', 'الهاتف', 'phone', 'mobile'],
   city: ['المدينة', 'city'],
 };
@@ -391,7 +392,7 @@ async function handleRefFilePicked(file) {
       .map(
         (r) => `<div class="sb-row">
           <div class="body">
-            <div class="teams">${r.name}</div>
+            <div class="teams">${r.refereeNumber ? '<b>' + r.refereeNumber + '</b> — ' : ''}${r.name}</div>
             <div class="meta">${[r.phone, r.city].filter(Boolean).join(' · ')}</div>
           </div>
         </div>`
@@ -449,6 +450,7 @@ function exportAssignments() {
     'الفئة',
     'الحكم',
     'رقم الحكم',
+    'جوال الحكم',
     'الحالة',
   ];
 
@@ -463,6 +465,7 @@ function exportAssignments() {
       m.round || '',
       m.category || '',
       ref?.name || (a ? 'حكم محذوف' : ''),
+      ref?.refereeNumber || '',
       ref?.phone || '',
       a ? STATUS[a.status] || a.status : 'بلا حكم',
     ];
@@ -471,7 +474,7 @@ function exportAssignments() {
   const ws = XLSX.utils.aoa_to_sheet([header, ...rows]);
   ws['!cols'] = [
     { wch: 16 }, { wch: 16 }, { wch: 26 }, { wch: 8 },
-    { wch: 14 }, { wch: 10 }, { wch: 20 }, { wch: 16 }, { wch: 18 },
+    { wch: 14 }, { wch: 10 }, { wch: 20 }, { wch: 10 }, { wch: 16 }, { wch: 18 },
   ];
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'التكليفات');
@@ -491,21 +494,93 @@ document.addEventListener('change', (e) => {
 
 function downloadTemplate() {
   if (typeof XLSX === 'undefined') return toast('مكتبة Excel لم تُحمَّل بعد');
-  const data = [['النادي الأول', 'النادي الثاني', 'الموعد', 'الطاولة', 'الدور', 'الفئة']];
-  const ws = XLSX.utils.aoa_to_sheet(data);
-  ws['!cols'] = [{ wch: 16 }, { wch: 16 }, { wch: 20 }, { wch: 8 }, { wch: 14 }, { wch: 10 }];
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'المباريات');
+
+  // 1) ورقة المباريات — العناوين فقط، جاهزة للتعبئة
+  const matches = XLSX.utils.aoa_to_sheet([
+    ['النادي الأول', 'النادي الثاني', 'الموعد', 'الطاولة', 'الدور', 'الفئة'],
+  ]);
+  matches['!cols'] = [
+    { wch: 18 }, { wch: 18 }, { wch: 20 }, { wch: 10 }, { wch: 16 }, { wch: 10 },
+  ];
+  XLSX.utils.book_append_sheet(wb, matches, 'المباريات');
+
+  // 2) ورقة أمثلة — يقلّدها المدخل ولا يخربها
+  const samples = XLSX.utils.aoa_to_sheet([
+    ['النادي الأول', 'النادي الثاني', 'الموعد', 'الطاولة', 'الدور', 'الفئة'],
+    ['الهلال', 'النصر', '2026-10-05 10:00', 'T1', 'الجولة 1', 'U17'],
+    ['الاتحاد', 'الشباب', '2026-10-05 10:00', 'T2', 'الجولة 1', 'U17'],
+    ['الفتح', 'التعاون', '2026-10-05 17:00', 'T3', 'الجولة 2', 'U19'],
+  ]);
+  samples['!cols'] = matches['!cols'];
+  XLSX.utils.book_append_sheet(wb, samples, 'أمثلة');
+
+  // 3) ورقة تعليمات — تشرح كل عمود وقيمه المقبولة
+  const guide = XLSX.utils.aoa_to_sheet([
+    ['كيفية التعبئة'],
+    [],
+    ['أدخل بياناتك في ورقة «المباريات» فقط. ورقة «أمثلة» للاسترشاد فقط.'],
+    ['السطر الأول (العناوين) لا يُلمس. كل سطر بعده يمثل مباراة واحدة.'],
+    [],
+    ['العمود', 'إجباري؟', 'الوصف', 'أمثلة'],
+    ['النادي الأول', 'نعم', 'اسم النادي الأول كما يظهر في الرسالة', 'الهلال / الاتحاد'],
+    ['النادي الثاني', 'نعم', 'اسم النادي الثاني', 'النصر / الشباب'],
+    ['الموعد', 'لا', 'التاريخ والوقت. اتركه فارغاً إن لم يتحدد بعد.', '2026-10-05 10:00'],
+    ['الطاولة', 'لا', 'رقم أو رمز الطاولة', 'T1 / 3'],
+    ['الدور', 'لا', 'اسم الدور أو الجولة', 'الجولة 1 / ربع النهائي'],
+    ['الفئة', 'لا', 'الفئة العمرية أو الفئة العامة', 'U13 / U15 / U17 / U19 / رجال / سيدات'],
+    [],
+    ['ملاحظات:'],
+    ['• صيغة الموعد المقبولة: YYYY-MM-DD HH:MM  أو  YYYY-MM-DDTHH:MM'],
+    ['• لا تدمج خلايا العناوين، ولا تحذف السطر الأول.'],
+    ['• لتخصيص أسماء أعمدة أخرى، الأسماء المقبولة:'],
+    ['   النادي الأول = teamA / clubA / الفريق الأول'],
+    ['   النادي الثاني = teamB / clubB / الفريق الثاني'],
+    ['   الموعد = date / startTime / الوقت / التاريخ'],
+    ['   الطاولة = table'],
+    ['   الدور = round'],
+    ['   الفئة = category'],
+  ]);
+  guide['!cols'] = [{ wch: 18 }, { wch: 10 }, { wch: 42 }, { wch: 30 }];
+  XLSX.utils.book_append_sheet(wb, guide, 'تعليمات');
+
   XLSX.writeFile(wb, 'قالب-المباريات.xlsx');
 }
 
 function downloadRefereesTemplate() {
   if (typeof XLSX === 'undefined') return toast('مكتبة Excel لم تُحمَّل بعد');
-  const data = [['الاسم', 'رقم الجوال', 'المدينة']];
-  const ws = XLSX.utils.aoa_to_sheet(data);
-  ws['!cols'] = [{ wch: 22 }, { wch: 14 }, { wch: 12 }];
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'الحكّام');
+
+  const refs = XLSX.utils.aoa_to_sheet([['الاسم', 'رقم الحكم', 'رقم الجوال', 'المدينة']]);
+  refs['!cols'] = [{ wch: 24 }, { wch: 10 }, { wch: 15 }, { wch: 14 }];
+  XLSX.utils.book_append_sheet(wb, refs, 'الحكّام');
+
+  const samples = XLSX.utils.aoa_to_sheet([
+    ['الاسم', 'رقم الحكم', 'رقم الجوال', 'المدينة'],
+    ['محمد العلي', '1', '0501234567', 'الرياض'],
+    ['فهد الشمري', '2', '0559876543', 'جدة'],
+    ['عبدالله القحطاني', '3', '0562345678', 'الدمام'],
+  ]);
+  samples['!cols'] = refs['!cols'];
+  XLSX.utils.book_append_sheet(wb, samples, 'أمثلة');
+
+  const guide = XLSX.utils.aoa_to_sheet([
+    ['كيفية التعبئة'],
+    [],
+    ['أدخل الحكّام في ورقة «الحكّام». ورقة «أمثلة» للاسترشاد فقط.'],
+    ['السطر الأول (العناوين) لا يُلمس. كل سطر بعده يمثل حكماً واحداً.'],
+    [],
+    ['العمود', 'إجباري؟', 'الوصف'],
+    ['الاسم', 'نعم', 'الاسم الكامل للحكم'],
+    ['رقم الحكم', 'لا', 'الرقم التعريفي (مو رقم الجوال) — مفيد للبحث السريع'],
+    ['رقم الجوال', 'نعم', 'رقم الواتساب. يُقبل بصيغ متعددة: 05..، +9665..، 9665..'],
+    ['المدينة', 'لا', 'مدينة الحكم'],
+    [],
+    ['البحث في القائمة يشتغل على الاسم أو رقم الحكم أو رقم الجوال.'],
+  ]);
+  guide['!cols'] = [{ wch: 14 }, { wch: 10 }, { wch: 55 }];
+  XLSX.utils.book_append_sheet(wb, guide, 'تعليمات');
+
   XLSX.writeFile(wb, 'قالب-الحكّام.xlsx');
 }
 
@@ -564,7 +639,7 @@ function renderReferees() {
   const q = state.refQuery.trim().toLowerCase();
   const rows = q
     ? state.referees.filter((r) =>
-        [r.name, r.phone, r.city].some((v) => String(v || '').toLowerCase().includes(q))
+        [r.name, r.phone, r.city, r.refereeNumber].some((v) => String(v || '').toLowerCase().includes(q))
       )
     : state.referees;
 
@@ -575,7 +650,7 @@ function renderReferees() {
   ul.innerHTML = rows
     .map(
       (r) => `<li>
-        <span class="pick">${r.name}
+        <span class="pick">${r.refereeNumber ? '<b>' + r.refereeNumber + '</b> — ' : ''}${r.name}
           <span class="sub">${r.phone}${r.city ? ' — ' + r.city : ''}</span>
         </span>
         <button class="del" data-del-referee="${r.id}" title="حذف">×</button>
@@ -921,7 +996,7 @@ document.addEventListener('submit', async (e) => {
         return;
       }
       const text = state.refFileRows
-        .map((r) => [r.name, r.phone, r.city].join(','))
+        .map((r) => [r.name, r.refereeNumber, r.phone, r.city].join(','))
         .join('\n');
       const r = await api('/referees/import', { method: 'POST', body: { text } });
       await loadSidebar();
