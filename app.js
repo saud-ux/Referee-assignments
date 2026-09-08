@@ -292,12 +292,7 @@ document.addEventListener('change', (e) => {
 
 function downloadTemplate() {
   if (typeof XLSX === 'undefined') return toast('مكتبة Excel لم تُحمَّل بعد');
-  const data = [
-    ['النادي الأول', 'النادي الثاني', 'الموعد', 'الطاولة', 'الدور', 'الفئة'],
-    ['الهلال', 'النصر', '2026-10-01 18:00', '3', 'ربع النهائي', 'رجال'],
-    ['الاتحاد', 'الشباب', '2026-10-01 19:30', '2', 'ربع النهائي', 'رجال'],
-    ['الفتح', 'التعاون', '2026-10-02 17:00', '1', 'نصف النهائي', 'سيدات'],
-  ];
+  const data = [['النادي الأول', 'النادي الثاني', 'الموعد', 'الطاولة', 'الدور', 'الفئة']];
   const ws = XLSX.utils.aoa_to_sheet(data);
   ws['!cols'] = [{ wch: 16 }, { wch: 16 }, { wch: 20 }, { wch: 8 }, { wch: 14 }, { wch: 10 }];
   const wb = XLSX.utils.book_new();
@@ -307,12 +302,7 @@ function downloadTemplate() {
 
 function downloadRefereesTemplate() {
   if (typeof XLSX === 'undefined') return toast('مكتبة Excel لم تُحمَّل بعد');
-  const data = [
-    ['الاسم', 'رقم الجوال', 'المدينة', 'الدرجة'],
-    ['محمد العلي', '0501234567', 'الرياض', 'دولي'],
-    ['فهد الشمري', '0559876543', 'جدة', 'أول'],
-    ['عبدالله القحطاني', '0562345678', 'الدمام', 'ثاني'],
-  ];
+  const data = [['الاسم', 'رقم الجوال', 'المدينة', 'الدرجة']];
   const ws = XLSX.utils.aoa_to_sheet(data);
   ws['!cols'] = [{ wch: 22 }, { wch: 14 }, { wch: 12 }, { wch: 10 }];
   const wb = XLSX.utils.book_new();
