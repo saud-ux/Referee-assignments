@@ -504,8 +504,8 @@ function renderBoard() {
 
       const status = a
         ? `<div class="status">${refereeName(a.refereeId)} — <b>${STATUS[a.status]}</b>${
-            a.simulated ? ' (تجريبي)' : ''
-          }${a.error ? `<br><span class="facts">${a.error}</span>` : ''}</div>`
+            a.error ? `<br><span class="facts">${a.error}</span>` : ''
+          }</div>`
         : '<div class="status">لم يُكلَّف حكم بعد</div>';
 
       const btns = [];
