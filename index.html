@@ -22,33 +22,40 @@
 <main class="shell">
 
   <aside class="rail">
-    <section class="panel">
-      <div class="panel-head">
-        <h2>البطولات</h2>
+    <details class="panel accord" open>
+      <summary class="panel-head">
+        <div class="ph-title">
+          <span class="caret">▾</span>
+          <h2>البطولات</h2>
+          <span id="t-count" class="counter"></span>
+        </div>
         <div class="head-actions">
           <button class="link" data-open="dlg-sb-tournaments"><b>استيراد</b></button>
           <button class="link" data-open="dlg-import-tournaments">من نص</button>
           <button class="link" data-open="dlg-tournament">إضافة</button>
         </div>
-      </div>
+      </summary>
       <ul class="list" id="tournaments"></ul>
-    </section>
+    </details>
 
-    <section class="panel">
-      <div class="panel-head">
-        <h2>الحكّام</h2>
+    <details class="panel accord" open>
+      <summary class="panel-head">
+        <div class="ph-title">
+          <span class="caret">▾</span>
+          <h2>الحكّام</h2>
+          <span id="ref-count" class="counter"></span>
+        </div>
         <div class="head-actions">
           <button class="link" data-open="dlg-import-referees">من نص</button>
           <button class="link" data-open="dlg-referees-file">من ملف</button>
           <button class="link" data-open="dlg-referee">إضافة</button>
         </div>
-      </div>
+      </summary>
       <div class="search-wrap">
         <input type="search" id="ref-search" placeholder="ابحث بالاسم أو رقم الحكم أو الجوال…" />
-        <span id="ref-count" class="counter"></span>
       </div>
       <ul class="list" id="referees"></ul>
-    </section>
+    </details>
   </aside>
 
   <section class="main">

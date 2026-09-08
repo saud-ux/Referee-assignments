@@ -263,6 +263,11 @@ document.addEventListener('click', (e) => {
   if (e.target.id === 'btn-export') exportAssignments();
 });
 
+// ضغط زر داخل <summary> يبقى يشغّل الزر بدون فتح/قفل القائمة
+document.addEventListener('click', (e) => {
+  if (e.target.closest('.panel-head .head-actions')) e.preventDefault();
+});
+
 /* ------- استيراد من ملف Excel ------- */
 const MATCH_HEADERS = {
   clubA: ['النادي الأول', 'الفريق الأول', 'clubA', 'teamA'],
@@ -545,6 +550,8 @@ async function loadBoard() {
 /* ---------------- العرض ---------------- */
 function renderTournaments() {
   const ul = $('#tournaments');
+  const counter = $('#t-count');
+  if (counter) counter.textContent = state.tournaments.length || '';
   if (!state.tournaments.length) {
     ul.innerHTML = '<li class="empty">لا توجد بطولات بعد. ابدأ بإضافة واحدة.</li>';
     return;

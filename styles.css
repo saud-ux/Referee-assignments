@@ -91,8 +91,31 @@ h1, h2, h3, .tally b {
   justify-content: space-between;
   padding: 12px 14px;
   border-bottom: 1px solid var(--line);
+  cursor: pointer;
+  list-style: none;
+  gap: 8px;
+  flex-wrap: wrap;
 }
+.panel-head::-webkit-details-marker { display: none; }
 .panel-head h2 { font-size: 19px; }
+
+.accord .ph-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.accord .caret {
+  color: var(--table);
+  font-size: 14px;
+  transition: transform 0.15s;
+  display: inline-block;
+  user-select: none;
+}
+.accord:not([open]) .caret { transform: rotate(-90deg); }
+.accord:not([open]) .panel-head { border-bottom: 0; }
+/* لما يقفل نخفي الأزرار — تحيّر المستخدم لأن الأقسام مطويّة */
+.accord:not([open]) .head-actions { opacity: 0.5; }
 
 .link {
   border: 0;
