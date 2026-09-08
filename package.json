@@ -1,0 +1,21 @@
+{
+  "name": "tahkeem",
+  "version": "0.1.0",
+  "description": "نظام تكليف حكام تنس الطاولة عبر واتساب",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "seed": "node scripts/seed.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  },
+  "optionalDependencies": {
+    "firebase-admin": "^12.7.0"
+  }
+}
