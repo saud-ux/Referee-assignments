@@ -22,6 +22,9 @@ app.use(
 // الويبهوك قبل الحارس — ميتا تناديه بدون تسجيل دخول
 app.use('/webhook', webhook);
 
+// نبض خارجي لإبقاء الخدمة مستيقظة على استضافات النوم التلقائي
+app.get('/health', (_req, res) => res.type('text').send('ok'));
+
 // صفحة الدخول ومسارات الجلسة
 app.use('/auth', authRoutes);
 app.get('/login', (_req, res) => res.sendFile(path.join(__dirname, 'login.html')));
