@@ -91,6 +91,41 @@ function importMessage(kind, r) {
   return parts.join(' — ');
 }
 
+async function loadScoreboard() {
+  const box = $('#sb-list');
+  box.innerHTML = '<p class="empty">جارٍ الجلب…</p>';
+  try {
+    const [preview, matches] = await Promise.all([
+      api('/scoreboard/preview'),
+      api(`/matches?tournamentId=${state.tournamentId}`),
+    ]);
+    const importedKeys = new Set(matches.map((m) => m.sourceKey).filter(Boolean));
+    state.sbRows = preview.rows || [];
+    if (!state.sbRows.length) {
+      box.innerHTML = '<p class="empty">لا توجد مباريات في السكوربورد.</p>';
+      return;
+    }
+    box.innerHTML = state.sbRows
+      .map((r) => {
+        const done = importedKeys.has(r.sourceKey);
+        return `<label class="sb-row ${done ? 'done' : ''}">
+          <input type="checkbox" data-sb-key="${r.sourceKey}" ${done ? 'disabled' : 'checked'} />
+          <div class="body">
+            <div class="teams">${r.clubA} × ${r.clubB}</div>
+            <div class="meta">${r.sourceKey}${r.number != null ? ' — المباراة ' + r.number : ''}</div>
+          </div>
+        </label>`;
+      })
+      .join('');
+  } catch (err) {
+    box.innerHTML = `<p class="empty">تعذّر الجلب: ${err.message}</p>`;
+  }
+}
+
+document.addEventListener('click', (e) => {
+  if (e.target.id === 'sb-refresh') loadScoreboard();
+});
+
 const liveAssignment = (matchId) =>
   state.assignments.find(
     (a) => a.matchId === matchId && ['pending', 'sent', 'accepted'].includes(a.status)
@@ -166,6 +201,7 @@ function renderBoard() {
 
   $('#btn-add-match').hidden = !tournament;
   $('#btn-import-matches').hidden = !tournament;
+  $('#btn-sb-import').hidden = !tournament;
   $('#tally').hidden = !tournament;
   $('#board-title').textContent = tournament ? tournament.name : 'اختر بطولة للبدء';
 
@@ -262,9 +298,15 @@ document.addEventListener('click', async (e) => {
 
   try {
     if (t.dataset.open) {
-      const needsTournament = ['dlg-match', 'dlg-import-matches'].includes(t.dataset.open);
+      const needsTournament = ['dlg-match', 'dlg-import-matches', 'dlg-sb-import'].includes(t.dataset.open);
       if (needsTournament && !state.tournamentId) {
         return toast('اختر بطولة أولاً');
+      }
+      if (t.dataset.open === 'dlg-sb-import') {
+        const tour = state.tournaments.find((x) => x.id === state.tournamentId);
+        $('#sb-target-name').textContent = tour?.name || '—';
+        openDialog(t.dataset.open);
+        return loadScoreboard();
       }
       return openDialog(t.dataset.open);
     }
@@ -377,6 +419,21 @@ document.addEventListener('submit', async (e) => {
       const r = await api('/matches/import', {
         method: 'POST',
         body: { text: body.text, tournamentId: state.tournamentId },
+      });
+      await loadBoard();
+      toast(importMessage('مباراة', r));
+    }
+    if (kind === 'sb-import') {
+      const keys = Array.from(form.querySelectorAll('[data-sb-key]:checked')).map((el) =>
+        el.dataset.sbKey
+      );
+      if (!keys.length) {
+        toast('لم تُحدَّد أي مباراة');
+        return;
+      }
+      const r = await api('/scoreboard/import', {
+        method: 'POST',
+        body: { tournamentId: state.tournamentId, keys },
       });
       await loadBoard();
       toast(importMessage('مباراة', r));

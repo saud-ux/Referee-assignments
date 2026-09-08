@@ -1,6 +1,7 @@
 import express from 'express';
 import { store, newId } from './store.js';
 import * as wa from './whatsapp.js';
+import * as scoreboard from './scoreboard.js';
 
 export const router = express.Router();
 
@@ -183,6 +184,60 @@ router.post('/matches', async (req, res) => {
     createdAt: now(),
   };
   res.status(201).json(await store.insert('matches', row));
+});
+
+router.get('/scoreboard/preview', async (_req, res) => {
+  try {
+    const rows = await scoreboard.fetchScoreboardMatches();
+    res.json({ ...scoreboard.scoreboardStatus(), count: rows.length, rows });
+  } catch (err) {
+    bad(res, err.message);
+  }
+});
+
+router.post('/scoreboard/import', async (req, res) => {
+  const { tournamentId, keys } = req.body || {};
+  if (!tournamentId) return bad(res, 'اختر البطولة أولاً');
+  const tournament = await store.get('tournaments', tournamentId);
+  if (!tournament) return bad(res, 'البطولة غير موجودة', 404);
+
+  let rows;
+  try {
+    rows = await scoreboard.fetchScoreboardMatches();
+  } catch (err) {
+    return bad(res, err.message, 502);
+  }
+
+  const existing = await store.list('matches', { tournamentId });
+  const existingKeys = new Set(existing.map((m) => m.sourceKey).filter(Boolean));
+  const filter = Array.isArray(keys) && keys.length ? new Set(keys) : null;
+
+  const added = [];
+  const skipped = [];
+
+  for (const row of rows) {
+    if (filter && !filter.has(row.sourceKey)) continue;
+    if (existingKeys.has(row.sourceKey)) {
+      skipped.push({ line: row.sourceKey, reason: 'موجودة سابقاً' });
+      continue;
+    }
+    const doc = {
+      id: newId(),
+      tournamentId,
+      clubA: row.clubA,
+      clubB: row.clubB,
+      startTime: '',
+      table: '',
+      round: row.number != null ? `المباراة ${row.number}` : '',
+      category: '',
+      sourceKey: row.sourceKey,
+      source: 'scoreboard',
+      createdAt: now(),
+    };
+    added.push(await store.insert('matches', doc));
+  }
+
+  res.status(201).json({ added: added.length, skipped });
 });
 
 router.post('/matches/import', async (req, res) => {

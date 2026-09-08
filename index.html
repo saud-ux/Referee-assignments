@@ -59,7 +59,8 @@
     <div class="main-head">
       <h2 id="board-title">اختر بطولة للبدء</h2>
       <div class="head-actions">
-        <button class="btn ghost" id="btn-import-matches" hidden data-open="dlg-import-matches">استيراد مباريات</button>
+        <button class="btn ghost" id="btn-sb-import" hidden data-open="dlg-sb-import">استيراد من السكوربورد</button>
+        <button class="btn ghost" id="btn-import-matches" hidden data-open="dlg-import-matches">استيراد يدوي</button>
         <button class="btn" id="btn-add-match" hidden data-open="dlg-match">إضافة مباراة</button>
       </div>
     </div>
@@ -152,6 +153,27 @@
     <menu>
       <button value="cancel" class="btn ghost" formnovalidate>إلغاء</button>
       <button value="save" class="btn">إرسال التكليف</button>
+    </menu>
+  </form>
+</dialog>
+
+<!-- استيراد من السكوربورد -->
+<dialog id="dlg-sb-import">
+  <form method="dialog" class="form" data-form="sb-import">
+    <div class="form-head">
+      <h3>استيراد من السكوربورد</h3>
+      <button type="button" class="dlg-close" data-close aria-label="إغلاق">×</button>
+    </div>
+    <p class="hint">
+      يُقرأ من قاعدة السكوربورد مباشرة (قراءة فقط).<br>
+      البطولة المستهدفة: <b id="sb-target-name">—</b><br>
+      المباريات المُستوردة سابقاً لا تتكرر. المواعيد تُدخل يدويّاً بعد الاستيراد.
+    </p>
+    <div id="sb-list" class="sb-list"><p class="empty">جارٍ الجلب…</p></div>
+    <menu>
+      <button type="button" class="btn ghost" id="sb-refresh">تحديث القائمة</button>
+      <button value="cancel" class="btn ghost" formnovalidate>إلغاء</button>
+      <button value="save" class="btn" id="sb-submit">استيراد المحدّد</button>
     </menu>
   </form>
 </dialog>

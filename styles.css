@@ -280,6 +280,30 @@ dialog::backdrop { background: rgba(20, 32, 43, 0.45); }
   flex-wrap: wrap;
   align-items: center;
 }
+
+.sb-list {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  max-height: 260px;
+  overflow-y: auto;
+  background: #fbfcfc;
+}
+.sb-list .empty { padding: 14px; text-align: center; }
+.sb-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--line);
+  cursor: pointer;
+}
+.sb-row:last-child { border-bottom: 0; }
+.sb-row input { width: 18px; height: 18px; margin: 0; flex-shrink: 0; }
+.sb-row .body { flex: 1; min-width: 0; }
+.sb-row .teams { font-weight: 600; }
+.sb-row .meta { font-size: 12.5px; color: var(--muted); }
+.sb-row.done { opacity: 0.55; }
+.sb-row.done .meta::after { content: ' — موجودة'; color: var(--table); }
 .form .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .form menu {
   position: sticky;
