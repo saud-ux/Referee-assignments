@@ -23,6 +23,14 @@ html, body {
   line-height: 1.6;
 }
 
+/* تجميد الخلفية عندما تكون هناك نافذة مفتوحة */
+body.dlg-open {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  width: 100%;
+}
+
 h1, h2, h3, .tally b {
   font-family: "Zain", "IBM Plex Sans Arabic", sans-serif;
   font-weight: 800;

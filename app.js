@@ -40,6 +40,41 @@ function toast(msg) {
   toastTimer = setTimeout(() => (el.hidden = true), 3200);
 }
 
+/* ---------------- إدارة النوافذ ---------------- */
+let savedScrollY = 0;
+
+function lockBackground() {
+  if (document.body.classList.contains('dlg-open')) return;
+  savedScrollY = window.scrollY;
+  document.body.style.top = `-${savedScrollY}px`;
+  document.body.classList.add('dlg-open');
+}
+
+function unlockBackground() {
+  if (!document.body.classList.contains('dlg-open')) return;
+  document.body.classList.remove('dlg-open');
+  document.body.style.top = '';
+  window.scrollTo(0, savedScrollY);
+}
+
+function openDialog(id) {
+  const dlg = document.getElementById(id);
+  if (!dlg) return;
+  lockBackground();
+  dlg.showModal();
+}
+
+function closeDialog(dlg) {
+  dlg.querySelector('form')?.reset();
+  dlg.close();
+}
+
+document.addEventListener('close', (e) => {
+  if (e.target.tagName === 'DIALOG' && !document.querySelector('dialog[open]')) {
+    unlockBackground();
+  }
+}, true);
+
 const fmtTime = (iso) =>
   iso
     ? new Intl.DateTimeFormat('ar-SA-u-ca-gregory', {
@@ -200,10 +235,7 @@ document.addEventListener('click', async (e) => {
   const closer = e.target.closest('[data-close]');
   if (closer) {
     const dlg = closer.closest('dialog');
-    if (dlg) {
-      dlg.querySelector('form')?.reset();
-      dlg.close();
-    }
+    if (dlg) closeDialog(dlg);
     return;
   }
 
@@ -213,8 +245,7 @@ document.addEventListener('click', async (e) => {
       e.clientX >= r.left && e.clientX <= r.right &&
       e.clientY >= r.top && e.clientY <= r.bottom;
     if (!inside) {
-      e.target.querySelector('form')?.reset();
-      e.target.close();
+      closeDialog(e.target);
       return;
     }
   }
@@ -227,7 +258,7 @@ document.addEventListener('click', async (e) => {
       if (t.dataset.open === 'dlg-match' && !state.tournamentId) {
         return toast('اختر بطولة أولاً');
       }
-      return $('#' + t.dataset.open).showModal();
+      return openDialog(t.dataset.open);
     }
 
     if (t.dataset.tournament) {
@@ -244,7 +275,7 @@ document.addEventListener('click', async (e) => {
       $('#assign-select').innerHTML = state.referees
         .map((r) => `<option value="${r.id}">${r.name} — ${r.phone}</option>`)
         .join('');
-      return $('#dlg-assign').showModal();
+      return openDialog('dlg-assign');
     }
 
     if (t.dataset.cancel) {
