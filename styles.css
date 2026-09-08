@@ -1,0 +1,239 @@
+:root {
+  --ink: #14202b;
+  --bg: #eaeeec;
+  --surface: #ffffff;
+  --table: #0f5c4e;
+  --table-soft: #e3efeb;
+  --ball: #d8541f;
+  --ball-soft: #fbe9e0;
+  --red: #a8322a;
+  --muted: #6d7c83;
+  --line: #d7dedb;
+  --radius: 10px;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: "IBM Plex Sans Arabic", system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+h1, h2, h3, .tally b {
+  font-family: "Zain", "IBM Plex Sans Arabic", sans-serif;
+  font-weight: 800;
+  letter-spacing: 0;
+  margin: 0;
+}
+
+/* ---------- الشريط العلوي ---------- */
+.bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  background: var(--ink);
+  color: #f2f5f4;
+}
+.bar h1 { font-size: 26px; line-height: 1.2; }
+.bar p { margin: 0; font-size: 13px; color: #9fb0b7; }
+.bar-meta { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.chip {
+  font-size: 12.5px;
+  padding: 5px 11px;
+  border-radius: 999px;
+  background: var(--ball);
+  color: #fff;
+  white-space: nowrap;
+}
+.chip.live { background: var(--table); }
+.chip-quiet { background: #2a3946; color: #9fb0b7; }
+
+/* ---------- الهيكل ---------- */
+.shell {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
+  gap: 18px;
+  padding: 18px;
+  align-items: start;
+  max-width: 1240px;
+  margin: 0 auto;
+}
+@media (max-width: 860px) {
+  .shell { grid-template-columns: 1fr; padding: 12px; gap: 12px; }
+}
+
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  margin-bottom: 14px;
+  overflow: hidden;
+}
+.panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--line);
+}
+.panel-head h2 { font-size: 19px; }
+
+.link {
+  border: 0;
+  background: none;
+  color: var(--table);
+  font: inherit;
+  font-size: 13.5px;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+}
+.link:hover { text-decoration: underline; }
+
+.list { list-style: none; margin: 0; padding: 0; }
+.list li {
+  border-bottom: 1px solid var(--line);
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.list li:last-child { border-bottom: 0; }
+.list button.pick {
+  border: 0; background: none; font: inherit; text-align: right;
+  cursor: pointer; flex: 1; color: inherit; padding: 0;
+}
+.list li.on { background: var(--table-soft); }
+.list li.on button.pick { font-weight: 600; }
+.list .sub { display: block; font-size: 12.5px; color: var(--muted); }
+.list .del {
+  border: 0; background: none; color: var(--muted); cursor: pointer;
+  font-size: 17px; line-height: 1; padding: 2px 6px; border-radius: 6px;
+}
+.list .del:hover { color: var(--red); background: var(--ball-soft); }
+.empty { padding: 16px 14px; color: var(--muted); font-size: 13.5px; }
+
+/* ---------- العدّاد ---------- */
+.tally {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  background: var(--line);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.tally-item {
+  background: var(--surface);
+  padding: 12px 10px;
+  text-align: center;
+}
+.tally-item b { display: block; font-size: 34px; line-height: 1; }
+.tally-item span { font-size: 12.5px; color: var(--muted); }
+.tally-item[data-state="accepted"] b { color: var(--table); }
+.tally-item[data-state="sent"] b { color: var(--ball); }
+.tally-item[data-state="declined"] b { color: var(--red); }
+
+.main-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.main-head h2 { font-size: 23px; }
+
+/* ---------- بطاقات المباريات ---------- */
+.match {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-right: 4px solid var(--line);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  margin-bottom: 10px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+}
+.match[data-state="accepted"] { border-right-color: var(--table); }
+.match[data-state="sent"] { border-right-color: var(--ball); }
+.match[data-state="declined"] { border-right-color: var(--red); }
+
+.match .players { font-size: 17px; font-weight: 600; }
+.match .facts { font-size: 13px; color: var(--muted); }
+.match .status { font-size: 13.5px; margin-top: 4px; }
+.match .status b { font-weight: 600; }
+.match[data-state="accepted"] .status b { color: var(--table); }
+.match[data-state="sent"] .status b { color: var(--ball); }
+.match[data-state="declined"] .status b { color: var(--red); }
+.match .actions { display: flex; flex-direction: column; gap: 6px; }
+
+.btn {
+  font: inherit;
+  font-size: 14px;
+  border: 1px solid var(--table);
+  background: var(--table);
+  color: #fff;
+  padding: 7px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.btn:hover { background: #0c4c40; }
+.btn.ghost { background: none; color: var(--table); }
+.btn.ghost:hover { background: var(--table-soft); }
+.btn.small { font-size: 13px; padding: 5px 10px; }
+.btn.danger { border-color: var(--red); color: var(--red); background: none; }
+.btn.danger:hover { background: var(--ball-soft); }
+
+:focus-visible { outline: 2px solid var(--ball); outline-offset: 2px; }
+
+/* ---------- النوافذ ---------- */
+dialog {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 0;
+  width: min(460px, calc(100vw - 24px));
+  color: var(--ink);
+}
+dialog::backdrop { background: rgba(20, 32, 43, 0.45); }
+.form { padding: 18px; display: grid; gap: 12px; }
+.form h3 { font-size: 21px; }
+.form label { display: grid; gap: 5px; font-size: 13.5px; color: var(--muted); }
+.form input, .form select {
+  font: inherit;
+  font-size: 15px;
+  color: var(--ink);
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfcfc;
+  width: 100%;
+}
+.form .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.form menu { display: flex; justify-content: flex-start; gap: 8px; margin: 4px 0 0; padding: 0; }
+.hint { margin: 0; font-size: 13.5px; color: var(--muted); }
+
+/* ---------- التنبيه ---------- */
+.toast {
+  position: fixed;
+  inset-block-end: 18px;
+  inset-inline-start: 18px;
+  background: var(--ink);
+  color: #fff;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  z-index: 20;
+}

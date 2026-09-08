@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>مكتب التكليفات — تنس الطاولة</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600&family=Zain:wght@700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<header class="bar">
+  <div class="bar-title">
+    <h1>مكتب التكليفات</h1>
+    <p>تكليف حكام تنس الطاولة ومتابعة ردودهم</p>
+  </div>
+  <div class="bar-meta">
+    <span class="chip" id="chip-wa">…</span>
+    <span class="chip chip-quiet" id="chip-store">…</span>
+  </div>
+</header>
+
+<main class="shell">
+
+  <aside class="rail">
+    <section class="panel">
+      <div class="panel-head">
+        <h2>البطولات</h2>
+        <button class="link" data-open="dlg-tournament">إضافة</button>
+      </div>
+      <ul class="list" id="tournaments"></ul>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <h2>الحكّام</h2>
+        <button class="link" data-open="dlg-referee">إضافة</button>
+      </div>
+      <ul class="list" id="referees"></ul>
+    </section>
+  </aside>
+
+  <section class="main">
+    <div class="tally" id="tally" hidden>
+      <div class="tally-item" data-state="accepted"><b id="n-accepted">0</b><span>قبلوا</span></div>
+      <div class="tally-item" data-state="sent"><b id="n-sent">0</b><span>بانتظار الرد</span></div>
+      <div class="tally-item" data-state="declined"><b id="n-declined">0</b><span>اعتذروا</span></div>
+      <div class="tally-item" data-state="empty"><b id="n-empty">0</b><span>بلا حكم</span></div>
+    </div>
+
+    <div class="main-head">
+      <h2 id="board-title">اختر بطولة للبدء</h2>
+      <button class="btn" id="btn-add-match" hidden data-open="dlg-match">إضافة مباراة</button>
+    </div>
+
+    <div id="board"></div>
+  </section>
+
+</main>
+
+<!-- إضافة بطولة -->
+<dialog id="dlg-tournament">
+  <form method="dialog" class="form" data-form="tournament">
+    <h3>بطولة جديدة</h3>
+    <label>اسم البطولة <input name="name" required /></label>
+    <div class="row">
+      <label>المدينة <input name="city" /></label>
+      <label>الصالة <input name="venue" /></label>
+    </div>
+    <div class="row">
+      <label>من <input name="startDate" type="date" /></label>
+      <label>إلى <input name="endDate" type="date" /></label>
+    </div>
+    <menu>
+      <button value="cancel" class="btn ghost">إلغاء</button>
+      <button value="save" class="btn">حفظ البطولة</button>
+    </menu>
+  </form>
+</dialog>
+
+<!-- إضافة حكم -->
+<dialog id="dlg-referee">
+  <form method="dialog" class="form" data-form="referee">
+    <h3>حكم جديد</h3>
+    <label>الاسم <input name="name" required /></label>
+    <label>رقم الجوال <input name="phone" required inputmode="tel" placeholder="05xxxxxxxx" /></label>
+    <div class="row">
+      <label>المدينة <input name="city" /></label>
+      <label>الدرجة <input name="level" placeholder="دولي / أول / ثاني" /></label>
+    </div>
+    <menu>
+      <button value="cancel" class="btn ghost">إلغاء</button>
+      <button value="save" class="btn">حفظ الحكم</button>
+    </menu>
+  </form>
+</dialog>
+
+<!-- إضافة مباراة -->
+<dialog id="dlg-match">
+  <form method="dialog" class="form" data-form="match">
+    <h3>مباراة جديدة</h3>
+    <div class="row">
+      <label>اللاعب الأول <input name="playerA" required /></label>
+      <label>اللاعب الثاني <input name="playerB" required /></label>
+    </div>
+    <div class="row">
+      <label>الموعد <input name="startTime" type="datetime-local" /></label>
+      <label>الطاولة <input name="table" placeholder="3" /></label>
+    </div>
+    <div class="row">
+      <label>الدور <input name="round" placeholder="ربع النهائي" /></label>
+      <label>الفئة <input name="category" placeholder="رجال" /></label>
+    </div>
+    <menu>
+      <button value="cancel" class="btn ghost">إلغاء</button>
+      <button value="save" class="btn">حفظ المباراة</button>
+    </menu>
+  </form>
+</dialog>
+
+<!-- اختيار حكم -->
+<dialog id="dlg-assign">
+  <form method="dialog" class="form" data-form="assign">
+    <h3>تكليف حكم</h3>
+    <p class="hint" id="assign-match"></p>
+    <label>الحكم
+      <select name="refereeId" required id="assign-select"></select>
+    </label>
+    <menu>
+      <button value="cancel" class="btn ghost">إلغاء</button>
+      <button value="save" class="btn">إرسال التكليف</button>
+    </menu>
+  </form>
+</dialog>
+
+<div id="toast" class="toast" hidden></div>
+
+<script src="app.js"></script>
+</body>
+</html>
