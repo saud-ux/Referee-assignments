@@ -470,7 +470,6 @@ function exportAssignments() {
     'النادي الأول',
     'النادي الثاني',
     'الموعد',
-    'الطاولة',
     'الدور',
     'الفئة',
     'الحكم',
@@ -486,7 +485,6 @@ function exportAssignments() {
       m.clubA || m.playerA || '',
       m.clubB || m.playerB || '',
       m.startTime ? fmtTime(m.startTime) : '',
-      m.table || '',
       m.round || '',
       m.category || '',
       ref?.name || (a ? 'حكم محذوف' : ''),
@@ -498,7 +496,7 @@ function exportAssignments() {
 
   const ws = XLSX.utils.aoa_to_sheet([header, ...rows]);
   ws['!cols'] = [
-    { wch: 16 }, { wch: 16 }, { wch: 26 }, { wch: 8 },
+    { wch: 16 }, { wch: 16 }, { wch: 26 },
     { wch: 14 }, { wch: 10 }, { wch: 20 }, { wch: 10 }, { wch: 16 }, { wch: 18 },
   ];
   const wb = XLSX.utils.book_new();
@@ -520,11 +518,9 @@ document.addEventListener('change', (e) => {
 function downloadTemplate() {
   if (typeof XLSX === 'undefined') return toast('مكتبة Excel لم تُحمَّل بعد');
   const ws = XLSX.utils.aoa_to_sheet([
-    ['النادي الأول', 'النادي الثاني', 'الموعد', 'الطاولة', 'الدور', 'الفئة'],
+    ['النادي الأول', 'النادي الثاني', 'الموعد', 'الدور', 'الفئة'],
   ]);
-  ws['!cols'] = [
-    { wch: 18 }, { wch: 18 }, { wch: 20 }, { wch: 10 }, { wch: 16 }, { wch: 10 },
-  ];
+  ws['!cols'] = [{ wch: 18 }, { wch: 18 }, { wch: 20 }, { wch: 16 }, { wch: 10 }];
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'المباريات');
   XLSX.writeFile(wb, 'قالب-المباريات.xlsx');
@@ -730,6 +726,10 @@ function renderBoard() {
         const t = String(a.startTime).localeCompare(String(b.startTime));
         return t !== 0 ? t : String(a.table).localeCompare(String(b.table));
       });
+      // نُظهر الأعمدة الاختيارية فقط عندما تحمل مباراة واحدة على الأقل قيمة
+      const showTable = rows.some((m) => (m.table || '').trim());
+      const showRound = rows.some((m) => (m.round || '').trim());
+      const showCat = rows.some((m) => (m.category || '').trim());
       const collapsed = state.collapsed?.has(k) ? '' : ' open';
       return `<details class="dayg" data-day="${k}"${collapsed}>
         <summary>
@@ -741,10 +741,10 @@ function renderBoard() {
             <thead>
               <tr>
                 <th>الوقت</th>
-                <th>الطاولة</th>
+                ${showTable ? '<th>الطاولة</th>' : ''}
                 <th class="wide">المباراة</th>
-                <th>الفئة</th>
-                <th>الدور</th>
+                ${showCat ? '<th>الفئة</th>' : ''}
+                ${showRound ? '<th>الدور</th>' : ''}
                 <th class="wide">الحكم</th>
                 <th></th>
               </tr>
@@ -755,10 +755,10 @@ function renderBoard() {
                 const st = a?.status || 'empty';
                 return `<tr data-state="${st}">
                   <td class="tm">${fmtHm(m.startTime)}</td>
-                  <td>${m.table || '—'}</td>
+                  ${showTable ? `<td>${m.table || '—'}</td>` : ''}
                   <td class="wide"><b>${m.clubA || m.playerA || ''}</b> × <b>${m.clubB || m.playerB || ''}</b></td>
-                  <td>${m.category || '—'}</td>
-                  <td>${m.round || '—'}</td>
+                  ${showCat ? `<td>${m.category || '—'}</td>` : ''}
+                  ${showRound ? `<td>${m.round || '—'}</td>` : ''}
                   <td class="wide ref">${refereeCell(a)}</td>
                   <td class="acts">
                     ${actionsFor(m, a)}
