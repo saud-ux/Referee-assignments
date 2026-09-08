@@ -124,7 +124,174 @@ async function loadScoreboard() {
 
 document.addEventListener('click', (e) => {
   if (e.target.id === 'sb-refresh') loadScoreboard();
+  if (e.target.id === 'btn-download-tpl') downloadTemplate();
+  if (e.target.id === 'btn-download-ref-tpl') downloadRefereesTemplate();
 });
+
+/* ------- استيراد من ملف Excel ------- */
+const MATCH_HEADERS = {
+  clubA: ['النادي الأول', 'الفريق الأول', 'clubA', 'teamA'],
+  clubB: ['النادي الثاني', 'الفريق الثاني', 'clubB', 'teamB'],
+  startTime: ['الموعد', 'التاريخ', 'الوقت', 'startTime', 'date'],
+  table: ['الطاولة', 'table'],
+  round: ['الدور', 'round'],
+  category: ['الفئة', 'category'],
+};
+
+const REFEREE_HEADERS = {
+  name: ['الاسم', 'الحكم', 'name'],
+  phone: ['رقم الجوال', 'الجوال', 'الهاتف', 'phone', 'mobile'],
+  city: ['المدينة', 'city'],
+  level: ['الدرجة', 'المستوى', 'level'],
+};
+
+function mapHeader(cell, dict) {
+  const s = String(cell || '').trim();
+  for (const [key, aliases] of Object.entries(dict)) {
+    if (aliases.some((a) => a === s)) return key;
+  }
+  return null;
+}
+
+const matchHeader = (c) => mapHeader(c, MATCH_HEADERS);
+const refHeader = (c) => mapHeader(c, REFEREE_HEADERS);
+
+function normalizeTime(v) {
+  if (!v) return '';
+  if (v instanceof Date) return v.toISOString().slice(0, 16);
+  const s = String(v).trim().replace(' ', 'T');
+  return s;
+}
+
+function parseWorkbook(file, kind = 'match') {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('تعذّر قراءة الملف'));
+    reader.onload = () => {
+      try {
+        const wb = XLSX.read(reader.result, { type: 'array', cellDates: true });
+        const sheet = wb.Sheets[wb.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '', blankrows: false });
+        if (!rows.length) return resolve([]);
+        const mapFn = kind === 'referee' ? refHeader : matchHeader;
+        const headerRow = rows[0].map(mapFn);
+        const required = kind === 'referee' ? ['name', 'phone'] : ['clubA', 'clubB'];
+        const out = [];
+        for (let i = 1; i < rows.length; i++) {
+          const raw = rows[i];
+          if (!raw.some((v) => String(v).trim())) continue;
+          const rec = {};
+          headerRow.forEach((key, idx) => {
+            if (!key) return;
+            rec[key] = key === 'startTime'
+              ? normalizeTime(raw[idx])
+              : String(raw[idx] || '').trim();
+          });
+          if (required.every((k) => rec[k])) out.push(rec);
+        }
+        resolve(out);
+      } catch (err) {
+        reject(err);
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+async function handleFilePicked(file) {
+  const box = $('#file-preview');
+  box.hidden = false;
+  box.innerHTML = '<p class="empty">جارٍ القراءة…</p>';
+  try {
+    const rows = await parseWorkbook(file);
+    state.fileRows = rows;
+    if (!rows.length) {
+      box.innerHTML = '<p class="empty">ما لقيت بيانات صالحة. تأكّد من عناوين الأعمدة.</p>';
+      return;
+    }
+    box.innerHTML = rows
+      .map(
+        (r) => `<div class="sb-row">
+          <div class="body">
+            <div class="teams">${r.clubA} × ${r.clubB}</div>
+            <div class="meta">${[r.startTime, r.table && 'طاولة ' + r.table, r.round, r.category]
+              .filter(Boolean)
+              .join(' · ') || 'بلا تفاصيل'}</div>
+          </div>
+        </div>`
+      )
+      .join('');
+  } catch (err) {
+    box.innerHTML = `<p class="empty">خطأ في الملف: ${err.message}</p>`;
+    state.fileRows = [];
+  }
+}
+
+async function handleRefFilePicked(file) {
+  const box = $('#ref-file-preview');
+  box.hidden = false;
+  box.innerHTML = '<p class="empty">جارٍ القراءة…</p>';
+  try {
+    const rows = await parseWorkbook(file, 'referee');
+    state.refFileRows = rows;
+    if (!rows.length) {
+      box.innerHTML = '<p class="empty">ما لقيت بيانات صالحة. تأكّد من عناوين الأعمدة.</p>';
+      return;
+    }
+    box.innerHTML = rows
+      .map(
+        (r) => `<div class="sb-row">
+          <div class="body">
+            <div class="teams">${r.name}</div>
+            <div class="meta">${[r.phone, r.city, r.level].filter(Boolean).join(' · ')}</div>
+          </div>
+        </div>`
+      )
+      .join('');
+  } catch (err) {
+    box.innerHTML = `<p class="empty">خطأ في الملف: ${err.message}</p>`;
+    state.refFileRows = [];
+  }
+}
+
+document.addEventListener('change', (e) => {
+  if (e.target.id === 'file-input' && e.target.files[0]) {
+    handleFilePicked(e.target.files[0]);
+  }
+  if (e.target.id === 'ref-file-input' && e.target.files[0]) {
+    handleRefFilePicked(e.target.files[0]);
+  }
+});
+
+function downloadTemplate() {
+  if (typeof XLSX === 'undefined') return toast('مكتبة Excel لم تُحمَّل بعد');
+  const data = [
+    ['النادي الأول', 'النادي الثاني', 'الموعد', 'الطاولة', 'الدور', 'الفئة'],
+    ['الهلال', 'النصر', '2026-10-01 18:00', '3', 'ربع النهائي', 'رجال'],
+    ['الاتحاد', 'الشباب', '2026-10-01 19:30', '2', 'ربع النهائي', 'رجال'],
+    ['الفتح', 'التعاون', '2026-10-02 17:00', '1', 'نصف النهائي', 'سيدات'],
+  ];
+  const ws = XLSX.utils.aoa_to_sheet(data);
+  ws['!cols'] = [{ wch: 16 }, { wch: 16 }, { wch: 20 }, { wch: 8 }, { wch: 14 }, { wch: 10 }];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'المباريات');
+  XLSX.writeFile(wb, 'قالب-المباريات.xlsx');
+}
+
+function downloadRefereesTemplate() {
+  if (typeof XLSX === 'undefined') return toast('مكتبة Excel لم تُحمَّل بعد');
+  const data = [
+    ['الاسم', 'رقم الجوال', 'المدينة', 'الدرجة'],
+    ['محمد العلي', '0501234567', 'الرياض', 'دولي'],
+    ['فهد الشمري', '0559876543', 'جدة', 'أول'],
+    ['عبدالله القحطاني', '0562345678', 'الدمام', 'ثاني'],
+  ];
+  const ws = XLSX.utils.aoa_to_sheet(data);
+  ws['!cols'] = [{ wch: 22 }, { wch: 14 }, { wch: 12 }, { wch: 10 }];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'الحكّام');
+  XLSX.writeFile(wb, 'قالب-الحكّام.xlsx');
+}
 
 const liveAssignment = (matchId) =>
   state.assignments.find(
@@ -200,8 +367,8 @@ function renderBoard() {
   const tournament = state.tournaments.find((t) => t.id === state.tournamentId);
 
   $('#btn-add-match').hidden = !tournament;
-  $('#btn-import-matches').hidden = !tournament;
   $('#btn-sb-import').hidden = !tournament;
+  $('#btn-file-import').hidden = !tournament;
   $('#tally').hidden = !tournament;
   $('#board-title').textContent = tournament ? tournament.name : 'اختر بطولة للبدء';
 
@@ -298,15 +465,21 @@ document.addEventListener('click', async (e) => {
 
   try {
     if (t.dataset.open) {
-      const needsTournament = ['dlg-match', 'dlg-import-matches', 'dlg-sb-import'].includes(t.dataset.open);
+      const needsTournament = ['dlg-match', 'dlg-import-matches', 'dlg-sb-import', 'dlg-match-file'].includes(t.dataset.open);
       if (needsTournament && !state.tournamentId) {
         return toast('اختر بطولة أولاً');
       }
+      const tour = state.tournaments.find((x) => x.id === state.tournamentId);
       if (t.dataset.open === 'dlg-sb-import') {
-        const tour = state.tournaments.find((x) => x.id === state.tournamentId);
         $('#sb-target-name').textContent = tour?.name || '—';
         openDialog(t.dataset.open);
         return loadScoreboard();
+      }
+      if (t.dataset.open === 'dlg-match-file') {
+        $('#file-target-name').textContent = tour?.name || '—';
+        $('#file-preview').hidden = true;
+        $('#file-preview').innerHTML = '';
+        state.fileRows = [];
       }
       return openDialog(t.dataset.open);
     }
@@ -422,6 +595,33 @@ document.addEventListener('submit', async (e) => {
       });
       await loadBoard();
       toast(importMessage('مباراة', r));
+    }
+    if (kind === 'match-file') {
+      if (!state.fileRows?.length) {
+        toast('لم يُحدَّد ملف صالح');
+        return;
+      }
+      const text = state.fileRows
+        .map((r) => [r.clubA, r.clubB, r.startTime, r.table, r.round, r.category].join(','))
+        .join('\n');
+      const r = await api('/matches/import', {
+        method: 'POST',
+        body: { text, tournamentId: state.tournamentId },
+      });
+      await loadBoard();
+      toast(importMessage('مباراة', r));
+    }
+    if (kind === 'referees-file') {
+      if (!state.refFileRows?.length) {
+        toast('لم يُحدَّد ملف صالح');
+        return;
+      }
+      const text = state.refFileRows
+        .map((r) => [r.name, r.phone, r.city, r.level].join(','))
+        .join('\n');
+      const r = await api('/referees/import', { method: 'POST', body: { text } });
+      await loadSidebar();
+      toast(importMessage('حكم', r));
     }
     if (kind === 'sb-import') {
       const keys = Array.from(form.querySelectorAll('[data-sb-key]:checked')).map((el) =>

@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600&family=Zain:wght@700;800&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="styles.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" defer></script>
 </head>
 <body>
 
@@ -40,7 +41,8 @@
       <div class="panel-head">
         <h2>الحكّام</h2>
         <div class="head-actions">
-          <button class="link" data-open="dlg-import-referees">استيراد</button>
+          <button class="link" data-open="dlg-import-referees">من نص</button>
+          <button class="link" data-open="dlg-referees-file">من ملف</button>
           <button class="link" data-open="dlg-referee">إضافة</button>
         </div>
       </div>
@@ -59,9 +61,9 @@
     <div class="main-head">
       <h2 id="board-title">اختر بطولة للبدء</h2>
       <div class="head-actions">
-        <button class="btn ghost" id="btn-sb-import" hidden data-open="dlg-sb-import">استيراد من السكوربورد</button>
-        <button class="btn ghost" id="btn-import-matches" hidden data-open="dlg-import-matches">استيراد يدوي</button>
-        <button class="btn" id="btn-add-match" hidden data-open="dlg-match">إضافة مباراة</button>
+        <button class="btn" id="btn-sb-import" hidden data-open="dlg-sb-import">استيراد</button>
+        <button class="btn ghost" id="btn-file-import" hidden data-open="dlg-match-file">من ملف Excel</button>
+        <button class="btn ghost" id="btn-add-match" hidden data-open="dlg-match">إضافة يدوية</button>
       </div>
     </div>
 
@@ -178,7 +180,75 @@
   </form>
 </dialog>
 
-<!-- استيراد حكام -->
+<!-- استيراد حكام من ملف -->
+<dialog id="dlg-referees-file">
+  <form method="dialog" class="form" data-form="referees-file">
+    <div class="form-head">
+      <h3>استيراد حكّام من ملف</h3>
+      <button type="button" class="dlg-close" data-close aria-label="إغلاق">×</button>
+    </div>
+    <p class="hint">
+      اقبل ملفات <code>.xlsx</code> و<code>.xls</code> و<code>.csv</code>.
+      السطر الأول عناوين الأعمدة، وكل سطر بعده حكم واحد.
+    </p>
+
+    <p class="hint" style="margin-bottom:2px"><b>مثال على شكل الملف:</b></p>
+    <div class="tpl-wrap">
+      <table class="tpl">
+        <thead>
+          <tr>
+            <th>الاسم</th>
+            <th>رقم الجوال</th>
+            <th>المدينة</th>
+            <th>الدرجة</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>محمد العلي</td>
+            <td>0501234567</td>
+            <td>الرياض</td>
+            <td>دولي</td>
+          </tr>
+          <tr>
+            <td>فهد الشمري</td>
+            <td>0559876543</td>
+            <td>جدة</td>
+            <td>أول</td>
+          </tr>
+          <tr>
+            <td>عبدالله القحطاني</td>
+            <td>0562345678</td>
+            <td>الدمام</td>
+            <td>ثاني</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="hint">
+      الأعمدة الإجبارية:
+      <b>الاسم</b>
+      و
+      <b>رقم الجوال</b>.
+      الباقي اختياري.
+    </p>
+
+    <p><button type="button" class="link" id="btn-download-ref-tpl">⬇︎ تنزيل قالب Excel جاهز</button></p>
+
+    <label>اختر الملف
+      <input type="file" name="file" id="ref-file-input" accept=".xlsx,.xls,.csv" required />
+    </label>
+    <div id="ref-file-preview" class="sb-list" hidden></div>
+
+    <menu>
+      <button value="cancel" class="btn ghost" formnovalidate>إلغاء</button>
+      <button value="save" class="btn">استيراد</button>
+    </menu>
+  </form>
+</dialog>
+
+<!-- استيراد حكام (نص) -->
 <dialog id="dlg-import-referees">
   <form method="dialog" class="form" data-form="import-referees">
     <div class="form-head">
@@ -218,7 +288,78 @@
   </form>
 </dialog>
 
-<!-- استيراد مباريات -->
+<!-- استيراد مباريات من Excel/CSV -->
+<dialog id="dlg-match-file">
+  <form method="dialog" class="form" data-form="match-file">
+    <div class="form-head">
+      <h3>استيراد مباريات من ملف</h3>
+      <button type="button" class="dlg-close" data-close aria-label="إغلاق">×</button>
+    </div>
+    <p class="hint">
+      اقبل ملفات <code>.xlsx</code> و<code>.xls</code> و<code>.csv</code>.
+      السطر الأول عناوين الأعمدة، وكل سطر بعده مباراة واحدة.<br>
+      البطولة المستهدفة: <b id="file-target-name">—</b>
+    </p>
+
+    <p class="hint" style="margin-bottom:2px"><b>مثال على شكل الملف:</b></p>
+    <div class="tpl-wrap">
+      <table class="tpl">
+        <thead>
+          <tr>
+            <th>النادي الأول</th>
+            <th>النادي الثاني</th>
+            <th>الموعد</th>
+            <th>الطاولة</th>
+            <th>الدور</th>
+            <th>الفئة</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>الهلال</td><td>النصر</td>
+            <td>2026-10-01 18:00</td>
+            <td>3</td><td>ربع النهائي</td><td>رجال</td>
+          </tr>
+          <tr>
+            <td>الاتحاد</td><td>الشباب</td>
+            <td>2026-10-01 19:30</td>
+            <td>2</td><td>ربع النهائي</td><td>رجال</td>
+          </tr>
+          <tr>
+            <td>الفتح</td><td>التعاون</td>
+            <td>2026-10-02 17:00</td>
+            <td>1</td><td>نصف النهائي</td><td>سيدات</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="hint">
+      الأعمدة الإجبارية:
+      <b>النادي الأول</b>
+      و
+      <b>النادي الثاني</b>.
+      الباقي اختياري. الموعد يقبل الصيغ:
+      <code>2026-10-01 18:00</code>
+      أو
+      <code>2026-10-01T18:00</code>.
+    </p>
+
+    <p><button type="button" class="link" id="btn-download-tpl">⬇︎ تنزيل قالب Excel جاهز</button></p>
+
+    <label>اختر الملف
+      <input type="file" name="file" id="file-input" accept=".xlsx,.xls,.csv" required />
+    </label>
+    <div id="file-preview" class="sb-list" hidden></div>
+
+    <menu>
+      <button value="cancel" class="btn ghost" formnovalidate>إلغاء</button>
+      <button value="save" class="btn">استيراد</button>
+    </menu>
+  </form>
+</dialog>
+
+<!-- استيراد مباريات (نص) -->
 <dialog id="dlg-import-matches">
   <form method="dialog" class="form" data-form="import-matches">
     <div class="form-head">
