@@ -40,6 +40,41 @@ function toast(msg) {
   toastTimer = setTimeout(() => (el.hidden = true), 3200);
 }
 
+/* ---------------- إدارة النوافذ ---------------- */
+let savedScrollY = 0;
+
+function lockBackground() {
+  if (document.body.classList.contains('dlg-open')) return;
+  savedScrollY = window.scrollY;
+  document.body.style.top = `-${savedScrollY}px`;
+  document.body.classList.add('dlg-open');
+}
+
+function unlockBackground() {
+  if (!document.body.classList.contains('dlg-open')) return;
+  document.body.classList.remove('dlg-open');
+  document.body.style.top = '';
+  window.scrollTo(0, savedScrollY);
+}
+
+function openDialog(id) {
+  const dlg = document.getElementById(id);
+  if (!dlg) return;
+  lockBackground();
+  dlg.showModal();
+}
+
+function closeDialog(dlg) {
+  dlg.querySelector('form')?.reset();
+  dlg.close();
+}
+
+document.addEventListener('close', (e) => {
+  if (e.target.tagName === 'DIALOG' && !document.querySelector('dialog[open]')) {
+    unlockBackground();
+  }
+}, true);
+
 const fmtTime = (iso) =>
   iso
     ? new Intl.DateTimeFormat('ar-SA-u-ca-gregory', {
@@ -197,6 +232,24 @@ function updateTally() {
 
 /* ---------------- التفاعل ---------------- */
 document.addEventListener('click', async (e) => {
+  const closer = e.target.closest('[data-close]');
+  if (closer) {
+    const dlg = closer.closest('dialog');
+    if (dlg) closeDialog(dlg);
+    return;
+  }
+
+  if (e.target.tagName === 'DIALOG' && e.target.open) {
+    const r = e.target.getBoundingClientRect();
+    const inside =
+      e.clientX >= r.left && e.clientX <= r.right &&
+      e.clientY >= r.top && e.clientY <= r.bottom;
+    if (!inside) {
+      closeDialog(e.target);
+      return;
+    }
+  }
+
   const t = e.target.closest('[data-open], [data-tournament], [data-assign], [data-cancel], [data-mark], [data-del-tournament], [data-del-referee], [data-del-match]');
   if (!t) return;
 
@@ -205,7 +258,7 @@ document.addEventListener('click', async (e) => {
       if (t.dataset.open === 'dlg-match' && !state.tournamentId) {
         return toast('اختر بطولة أولاً');
       }
-      return $('#' + t.dataset.open).showModal();
+      return openDialog(t.dataset.open);
     }
 
     if (t.dataset.tournament) {
@@ -222,7 +275,7 @@ document.addEventListener('click', async (e) => {
       $('#assign-select').innerHTML = state.referees
         .map((r) => `<option value="${r.id}">${r.name} — ${r.phone}</option>`)
         .join('');
-      return $('#dlg-assign').showModal();
+      return openDialog('dlg-assign');
     }
 
     if (t.dataset.cancel) {
