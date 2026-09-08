@@ -42,13 +42,55 @@ function samePassword(input) {
   return a.length === b.length && crypto.timingSafeEqual(a, b);
 }
 
+/* ---------- تحديد محاولات الدخول لمنع التخمين ---------- */
+const MAX_TRIES = 8;
+const LOCKOUT_MS = 15 * 60_000;
+const tries = new Map();
+
+const clientKey = (req) =>
+  (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.ip || 'unknown';
+
+function throttle(key) {
+  const rec = tries.get(key);
+  if (!rec) return null;
+  if (Date.now() > rec.until) {
+    tries.delete(key);
+    return null;
+  }
+  return rec.count >= MAX_TRIES ? Math.ceil((rec.until - Date.now()) / 60_000) : null;
+}
+
+function noteFailure(key) {
+  const rec = tries.get(key) || { count: 0, until: 0 };
+  rec.count += 1;
+  rec.until = Date.now() + LOCKOUT_MS;
+  tries.set(key, rec);
+}
+
+// تنظيف دوري حتى لا تنمو الخريطة بلا حد
+setInterval(() => {
+  const t = Date.now();
+  for (const [k, v] of tries) if (t > v.until) tries.delete(k);
+}, 10 * 60_000).unref();
+
 export const authRoutes = express.Router();
 
 authRoutes.post('/login', (req, res) => {
   if (!isLocked()) return res.json({ ok: true });
+
+  const key = clientKey(req);
+  const waitMinutes = throttle(key);
+  if (waitMinutes) {
+    return res.status(429).json({
+      error: `محاولات كثيرة — انتظر ${waitMinutes} دقيقة ثم أعد المحاولة`,
+    });
+  }
+
   if (!samePassword(req.body?.password)) {
+    noteFailure(key);
     return res.status(401).json({ error: 'كلمة المرور غير صحيحة' });
   }
+  tries.delete(key);
   const expiry = Date.now() + MAX_AGE_DAYS * 86400000;
   res.setHeader(
     'Set-Cookie',
