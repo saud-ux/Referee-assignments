@@ -3,9 +3,12 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { initStore } from './store.js';
 import { router, webhook } from './routes.js';
+import { authRoutes, guard, isLocked } from './auth.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
+
+app.set('trust proxy', 1);
 
 // نحتفظ بالجسم الخام للتحقق من توقيع ميتا
 app.use(
@@ -16,15 +19,24 @@ app.use(
   })
 );
 
-app.use('/api', router);
+// الويبهوك قبل الحارس — ميتا تناديه بدون تسجيل دخول
 app.use('/webhook', webhook);
 
-// كل الملفات في الجذر، فنقدّم ملفات الواجهة فقط
+// صفحة الدخول ومسارات الجلسة
+app.use('/auth', authRoutes);
+app.get('/login', (_req, res) => res.sendFile(path.join(__dirname, 'login.html')));
+app.get('/styles.css', (_req, res) => res.sendFile(path.join(__dirname, 'styles.css')));
+
+// من هنا فصاعداً يلزم تسجيل الدخول
+app.use(guard);
+
+app.use('/api', router);
+
+// كل الملفات في الجذر، فنقدّم ملفات الواجهة بالاسم
 // ولا نفتح المجلد كاملاً حتى لا تنكشف ملفات الخادم
 const PUBLIC_FILES = {
   '/': 'index.html',
   '/index.html': 'index.html',
-  '/styles.css': 'styles.css',
   '/app.js': 'app.js',
 };
 
@@ -41,4 +53,7 @@ app.use((err, _req, res, _next) => {
 
 const PORT = process.env.PORT || 3000;
 await initStore();
-app.listen(PORT, () => console.log(`النظام يعمل على المنفذ ${PORT}`));
+app.listen(PORT, () => {
+  console.log(`النظام يعمل على المنفذ ${PORT}`);
+  if (!isLocked()) console.warn('[تنبيه] ADMIN_PASSWORD غير مضبوطة — اللوحة مفتوحة للجميع');
+});

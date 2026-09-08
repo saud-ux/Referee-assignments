@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>الدخول — مكتب التكليفات</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600&family=Zain:wght@700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="styles.css" />
+<style>
+  .gate {
+    min-height: 100dvh;
+    display: grid;
+    place-items: center;
+    padding: 20px;
+  }
+  .gate .card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    width: min(380px, 100%);
+    padding: 26px 22px;
+  }
+  .gate h1 { font-size: 27px; margin-bottom: 2px; }
+  .gate p { margin: 0 0 18px; color: var(--muted); font-size: 14px; }
+  .gate .btn { width: 100%; justify-content: center; margin-top: 14px; padding: 10px; }
+  .err { color: var(--red); font-size: 13.5px; margin-top: 10px; min-height: 20px; }
+</style>
+</head>
+<body>
+<div class="gate">
+  <div class="card">
+    <h1>مكتب التكليفات</h1>
+    <p>أدخل كلمة المرور للمتابعة</p>
+    <label class="form" style="padding:0">كلمة المرور
+      <input type="password" id="pw" autocomplete="current-password" autofocus />
+    </label>
+    <button class="btn" id="go">دخول</button>
+    <div class="err" id="err"></div>
+  </div>
+</div>
+<script>
+  const pw = document.getElementById('pw');
+  const err = document.getElementById('err');
+
+  async function login() {
+    err.textContent = '';
+    const res = await fetch('/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: pw.value }),
+    });
+    if (res.ok) return (location.href = '/');
+    const data = await res.json().catch(() => ({}));
+    err.textContent = data.error || 'تعذّر الدخول';
+    pw.select();
+  }
+
+  document.getElementById('go').addEventListener('click', login);
+  pw.addEventListener('keydown', (e) => e.key === 'Enter' && login());
+</script>
+</body>
+</html>

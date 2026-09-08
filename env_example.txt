@@ -1,0 +1,24 @@
+# ---------- التشغيل ----------
+PORT=3000
+TZ=Asia/Riyadh
+NODE_ENV=production
+
+# ---------- الدخول ----------
+# اتركها فارغة محلياً لتتخطى شاشة الدخول
+ADMIN_PASSWORD=
+SESSION_SECRET=
+
+# ---------- التخزين ----------
+# بدون المفتاح التالي يعمل النظام بملف محلي data/db.json
+# FIREBASE_SERVICE_ACCOUNT={"type":"service_account", ...}
+# FIRESTORE_PREFIX=tahkeem_
+
+# ---------- واتساب ----------
+# اترك الحقلين فارغين ليعمل النظام في الوضع التجريبي
+WHATSAPP_TOKEN=
+WHATSAPP_PHONE_ID=
+WHATSAPP_APP_SECRET=
+WHATSAPP_VERIFY_TOKEN=ضع-كلمة-سرية-هنا
+WA_TEMPLATE_NAME=referee_assignment_ar
+WA_TEMPLATE_LANG=ar
+WA_API_VERSION=v21.0
