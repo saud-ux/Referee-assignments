@@ -315,14 +315,6 @@ const liveAssignment = (matchId) =>
   ) || state.assignments.find((a) => a.matchId === matchId && a.status === 'declined');
 
 /* ---------------- التحميل ---------------- */
-async function loadStatus() {
-  const s = await api('/status');
-  const wa = $('#chip-wa');
-  wa.textContent = s.whatsapp === 'live' ? 'واتساب مفعّل' : 'وضع تجريبي — بدون إرسال';
-  wa.classList.toggle('live', s.whatsapp === 'live');
-  $('#chip-store').textContent = s.storage;
-}
-
 async function loadSidebar() {
   [state.tournaments, state.referees] = await Promise.all([
     api('/tournaments'),
@@ -680,7 +672,6 @@ document.addEventListener('submit', async (e) => {
 });
 
 /* ---------------- التشغيل ---------------- */
-loadStatus();
 loadSidebar().then(() => {
   if (state.tournaments.length) {
     state.tournamentId = state.tournaments[0].id;
