@@ -126,7 +126,7 @@ export function donePage({ status, match, alreadyAnswered = false }) {
      </div>
      <p class="note">
        ${alreadyAnswered ? 'سبق أن سجّلت ردّك على هذا التكليف.' : 'وصل ردّك للجنة التحكيم.'}
-       ${accepted ? '<br>بالتوفيق.' : '<br>شكراً لإبلاغنا مبكراً.'}
+       ${accepted ? '<br>بالتوفيق.' : ''}
      </p>`
   );
 }

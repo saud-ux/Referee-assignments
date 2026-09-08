@@ -70,9 +70,8 @@ const fmtDateTime = (iso) => {
 /* ------------------------- الحالة العامة ------------------------- */
 router.get('/status', (req, res) => {
   res.json({
-    whatsapp: wa.isLive() ? 'live' : 'simulation',
+    delivery: wa.isLive() ? 'whatsapp تلقائي' : 'رابط الرد',
     storage: store.label,
-    template: wa.TEMPLATE_NAME,
   });
 });
 
@@ -415,7 +414,7 @@ async function dispatch(assignment) {
     status: 'sent',
     sentAt: now(),
     waMessageId: sent.messageId,
-    simulated: Boolean(sent.simulated),
+    autoSent: Boolean(sent.autoSent),
     error: null,
   });
 }

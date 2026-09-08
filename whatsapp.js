@@ -9,7 +9,7 @@ const PHONE_ID = () => process.env.WHATSAPP_PHONE_ID;
 export const TEMPLATE_NAME = process.env.WA_TEMPLATE_NAME || 'referee_assignment_ar';
 export const TEMPLATE_LANG = process.env.WA_TEMPLATE_LANG || 'ar';
 
-/** واتساب مفعّل فعلياً؟ إن لا، النظام يشتغل في وضع تجريبي بدون إرسال حقيقي. */
+/** هل الإرسال التلقائي عبر واتساب مفعّل؟ إن لا، تُرسل التكليفات عبر رابط الرد. */
 export const isLive = () => Boolean(TOKEN() && PHONE_ID());
 
 /** تحويل الرقم إلى صيغة دولية بدون + وبدون أصفار بادئة */
@@ -75,20 +75,17 @@ export async function sendAssignment({ to, assignmentId, params }) {
   };
 
   if (!isLive()) {
-    console.log('[whatsapp] وضع تجريبي — لم تُرسل رسالة فعلية:', JSON.stringify(payload, null, 2));
-    return { messageId: `sim_${assignmentId}`, simulated: true };
+    console.log('[whatsapp] غير مفعّل — التكليف يُرسل عبر الرابط بدل الرسالة التلقائية');
+    return { messageId: null, autoSent: false };
   }
 
   const res = await graph(`${PHONE_ID()}/messages`, payload);
-  return { messageId: res?.messages?.[0]?.id || null, simulated: false };
+  return { messageId: res?.messages?.[0]?.id || null, autoSent: true };
 }
 
 /** رسالة نصية حرة — تعمل مجاناً فقط داخل 24 ساعة من آخر رسالة من الحكم */
 export async function sendText(to, body) {
-  if (!isLive()) {
-    console.log(`[whatsapp] وضع تجريبي — نص إلى ${to}: ${body}`);
-    return { simulated: true };
-  }
+  if (!isLive()) return { autoSent: false };
   return graph(`${PHONE_ID()}/messages`, {
     messaging_product: 'whatsapp',
     to: normalizePhone(to),
