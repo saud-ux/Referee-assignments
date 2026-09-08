@@ -197,6 +197,28 @@ function updateTally() {
 
 /* ---------------- التفاعل ---------------- */
 document.addEventListener('click', async (e) => {
+  const closer = e.target.closest('[data-close]');
+  if (closer) {
+    const dlg = closer.closest('dialog');
+    if (dlg) {
+      dlg.querySelector('form')?.reset();
+      dlg.close();
+    }
+    return;
+  }
+
+  if (e.target.tagName === 'DIALOG' && e.target.open) {
+    const r = e.target.getBoundingClientRect();
+    const inside =
+      e.clientX >= r.left && e.clientX <= r.right &&
+      e.clientY >= r.top && e.clientY <= r.bottom;
+    if (!inside) {
+      e.target.querySelector('form')?.reset();
+      e.target.close();
+      return;
+    }
+  }
+
   const t = e.target.closest('[data-open], [data-tournament], [data-assign], [data-cancel], [data-mark], [data-del-tournament], [data-del-referee], [data-del-match]');
   if (!t) return;
 

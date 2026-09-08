@@ -63,7 +63,10 @@
 <!-- إضافة بطولة -->
 <dialog id="dlg-tournament">
   <form method="dialog" class="form" data-form="tournament">
-    <h3>بطولة جديدة</h3>
+    <div class="form-head">
+      <h3>بطولة جديدة</h3>
+      <button type="button" class="dlg-close" data-close aria-label="إغلاق">×</button>
+    </div>
     <label>اسم البطولة <input name="name" required /></label>
     <div class="row">
       <label>المدينة <input name="city" /></label>
@@ -83,7 +86,10 @@
 <!-- إضافة حكم -->
 <dialog id="dlg-referee">
   <form method="dialog" class="form" data-form="referee">
-    <h3>حكم جديد</h3>
+    <div class="form-head">
+      <h3>حكم جديد</h3>
+      <button type="button" class="dlg-close" data-close aria-label="إغلاق">×</button>
+    </div>
     <label>الاسم <input name="name" required /></label>
     <label>رقم الجوال <input name="phone" required inputmode="tel" placeholder="05xxxxxxxx" /></label>
     <div class="row">
@@ -100,7 +106,10 @@
 <!-- إضافة مباراة -->
 <dialog id="dlg-match">
   <form method="dialog" class="form" data-form="match">
-    <h3>مباراة جديدة</h3>
+    <div class="form-head">
+      <h3>مباراة جديدة</h3>
+      <button type="button" class="dlg-close" data-close aria-label="إغلاق">×</button>
+    </div>
     <div class="row">
       <label>اللاعب الأول <input name="playerA" required /></label>
       <label>اللاعب الثاني <input name="playerB" required /></label>
@@ -123,7 +132,10 @@
 <!-- اختيار حكم -->
 <dialog id="dlg-assign">
   <form method="dialog" class="form" data-form="assign">
-    <h3>تكليف حكم</h3>
+    <div class="form-head">
+      <h3>تكليف حكم</h3>
+      <button type="button" class="dlg-close" data-close aria-label="إغلاق">×</button>
+    </div>
     <p class="hint" id="assign-match"></p>
     <label>الحكم
       <select name="refereeId" required id="assign-select"></select>

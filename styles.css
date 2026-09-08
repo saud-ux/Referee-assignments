@@ -219,7 +219,27 @@ dialog::backdrop { background: rgba(20, 32, 43, 0.45); }
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
 }
+.form-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 4px;
+}
 .form h3 { font-size: 21px; }
+.dlg-close {
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font-size: 26px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 4px 10px;
+  border-radius: 8px;
+  min-width: 40px;
+  min-height: 40px;
+}
+.dlg-close:hover { background: var(--ball-soft); color: var(--red); }
 .form label { display: grid; gap: 5px; font-size: 13.5px; color: var(--muted); }
 .form input, .form select {
   font: inherit;
