@@ -173,9 +173,11 @@
       <button type="button" class="dlg-close" data-close aria-label="إغلاق">×</button>
     </div>
     <p class="hint" id="assign-match"></p>
-    <label>الحكم
-      <select name="refereeId" required id="assign-select"></select>
+    <input type="hidden" name="refereeId" id="assign-value" />
+    <label>ابحث عن الحكم
+      <input type="search" id="assign-search" placeholder="اكتب اسماً أو رقماً…" autocomplete="off" />
     </label>
+    <div id="assign-list" class="picker"></div>
     <menu>
       <button value="cancel" class="btn ghost" formnovalidate>إلغاء</button>
       <button value="save" class="btn">إرسال التكليف</button>

@@ -9,6 +9,8 @@ const state = {
   assignMatchId: null,
   editMatchId: null,
   refQuery: '',
+  assignQuery: '',
+  assignPick: null,
 };
 
 const STATUS = {
@@ -87,6 +89,76 @@ const fmtTime = (iso) =>
     : 'الموعد غير محدد';
 
 const refereeName = (id) => state.referees.find((r) => r.id === id)?.name || 'حكم محذوف';
+
+/* ---------------- منتقي الحكّام في نافذة التكليف ---------------- */
+const OPEN = ['pending', 'sent', 'accepted'];
+const CLASH_MS = 90 * 60_000; // مطابق لافتراضي الخادم — الخادم هو الحَكَم الفعلي
+
+/** عدد التكليفات القائمة لكل حكم في البطولة الحالية */
+function refereeLoads() {
+  const loads = new Map();
+  for (const a of state.assignments) {
+    if (!OPEN.includes(a.status)) continue;
+    loads.set(a.refereeId, (loads.get(a.refereeId) || 0) + 1);
+  }
+  return loads;
+}
+
+/** هل لدى الحكم مباراة أخرى قريبة زمنياً من المباراة الجاري تكليفها؟ */
+function clashFor(refereeId, target) {
+  if (!target?.startTime) return null;
+  const t = new Date(target.startTime).getTime();
+  if (Number.isNaN(t)) return null;
+
+  for (const a of state.assignments) {
+    if (a.refereeId !== refereeId || !OPEN.includes(a.status)) continue;
+    if (a.matchId === target.id) continue;
+    const other = state.matches.find((x) => x.id === a.matchId);
+    if (!other?.startTime) continue;
+    const ot = new Date(other.startTime).getTime();
+    if (!Number.isNaN(ot) && Math.abs(ot - t) < CLASH_MS) return other;
+  }
+  return null;
+}
+
+function renderPicker() {
+  const box = $('#assign-list');
+  const q = (state.assignQuery || '').trim().toLowerCase();
+  const target = state.matches.find((x) => x.id === state.assignMatchId);
+  const loads = refereeLoads();
+
+  const rows = q
+    ? state.referees.filter((r) =>
+        [r.name, r.phone, r.city].some((v) => String(v || '').toLowerCase().includes(q))
+      )
+    : state.referees;
+
+  if (!rows.length) {
+    box.innerHTML = `<p class="empty">لا حكم يطابق "${q}".</p>`;
+    return;
+  }
+
+  box.innerHTML = rows
+    .map((r) => {
+      const n = loads.get(r.id) || 0;
+      const clash = clashFor(r.id, target);
+      const tag = clash
+        ? `<span class="clash">⚠ مرتبط بمباراة قريبة</span>`
+        : n
+        ? `<span class="load${n >= 3 ? ' busy' : ''}">${n} تكليف</span>`
+        : '<span class="load">متفرّغ</span>';
+      return `<button type="button" class="pick-row${
+        state.assignPick === r.id ? ' on' : ''
+      }" data-pick-ref="${r.id}">
+        <span class="who">
+          <span class="nm">${r.name}</span>
+          <span class="meta">${[r.phone, r.city].filter(Boolean).join(' · ')}</span>
+        </span>
+        ${tag}
+      </button>`;
+    })
+    .join('');
+}
 
 /** يبني رابط الرد ونص رسالة الواتساب لتكليف معيّن */
 function buildInvite(assignmentId) {
@@ -316,6 +388,30 @@ document.addEventListener('input', (e) => {
     state.refQuery = e.target.value;
     renderReferees();
   }
+  if (e.target.id === 'assign-search') {
+    state.assignQuery = e.target.value;
+    renderPicker();
+  }
+});
+
+// اختيار حكم من المنتقي
+document.addEventListener('click', (e) => {
+  const row = e.target.closest('[data-pick-ref]');
+  if (!row) return;
+  state.assignPick = row.dataset.pickRef;
+  $('#assign-value').value = state.assignPick;
+  renderPicker();
+});
+
+// Enter في مربع البحث يختار النتيجة الوحيدة مباشرة
+document.addEventListener('keydown', (e) => {
+  if (e.target.id !== 'assign-search' || e.key !== 'Enter') return;
+  e.preventDefault();
+  const rows = document.querySelectorAll('#assign-list [data-pick-ref]');
+  if (rows.length !== 1) return;
+  state.assignPick = rows[0].dataset.pickRef;
+  $('#assign-value').value = state.assignPick;
+  renderPicker();
 });
 
 /* ------- تصدير كشف التكليفات ------- */
@@ -657,10 +753,13 @@ document.addEventListener('click', async (e) => {
       const m = state.matches.find((x) => x.id === state.assignMatchId);
       const teams = `${m.clubA || m.playerA || ''} × ${m.clubB || m.playerB || ''}`;
       $('#assign-match').textContent = `${teams} — ${fmtTime(m.startTime)}`;
-      $('#assign-select').innerHTML = state.referees
-        .map((r) => `<option value="${r.id}">${r.name} — ${r.phone}</option>`)
-        .join('');
-      return openDialog('dlg-assign');
+      state.assignQuery = '';
+      state.assignPick = null;
+      $('#assign-search').value = '';
+      $('#assign-value').value = '';
+      renderPicker();
+      openDialog('dlg-assign');
+      return $('#assign-search').focus();
     }
 
     if (t.dataset.cancel) {
@@ -744,6 +843,7 @@ document.addEventListener('submit', async (e) => {
       toast('حُفظ التعديل');
     }
     if (kind === 'assign') {
+      if (!body.refereeId) return toast('اختر حكماً من القائمة');
       const payload = { matchId: state.assignMatchId, refereeId: body.refereeId };
       try {
         await api('/assignments', { method: 'POST', body: payload });
