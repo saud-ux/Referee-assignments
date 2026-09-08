@@ -26,7 +26,6 @@
       <div class="panel-head">
         <h2>البطولات</h2>
         <div class="head-actions">
-          <button class="link" data-open="dlg-seed">تعبئة الموسم</button>
           <button class="link" data-open="dlg-sb-tournaments"><b>استيراد</b></button>
           <button class="link" data-open="dlg-import-tournaments">من نص</button>
           <button class="link" data-open="dlg-tournament">إضافة</button>
@@ -188,31 +187,6 @@
     <menu>
       <button value="cancel" class="btn ghost" formnovalidate>إلغاء</button>
       <button value="save" class="btn">إرسال التكليف</button>
-    </menu>
-  </form>
-</dialog>
-
-<!-- تعبئة بيانات الموسم -->
-<dialog id="dlg-seed">
-  <form method="dialog" class="form" data-form="seed">
-    <div class="form-head">
-      <h3>تعبئة بيانات الموسم 2026/2027</h3>
-      <button type="button" class="dlg-close" data-close aria-label="إغلاق">×</button>
-    </div>
-    <p class="hint">
-      تُضاف بطولات الموسم من روزنامة الاتحاد، ومباريات التجمع الأول
-      (U13 · U15 · U17 · U19) بمواعيدها وطاولاتها.
-    </p>
-    <div id="seed-info" class="sb-list"><p class="empty">جارٍ الفحص…</p></div>
-    <p class="hint">
-      <b>المواعيد والطاولات والجولات والأندية</b> منقولة من الملفات الرسمية.<br>
-      <b>المواجهات</b> مولّدة بقرعة دوري، لأن القرعة الرسمية غير واردة في تلك الملفات —
-      عدّلها من زر «تعديل» على كل مباراة عند صدورها.
-    </p>
-    <p class="hint">لن يتكرّر أي سطر لو ضغطت الزر أكثر من مرة.</p>
-    <menu>
-      <button value="cancel" class="btn ghost" formnovalidate>إلغاء</button>
-      <button value="save" class="btn">تعبئة</button>
     </menu>
   </form>
 </dialog>

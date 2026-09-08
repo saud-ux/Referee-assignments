@@ -198,26 +198,6 @@ function importMessage(kind, r) {
   return parts.join(' — ');
 }
 
-async function loadSeedPreview() {
-  const box = $('#seed-info');
-  box.innerHTML = '<p class="empty">جارٍ الفحص…</p>';
-  try {
-    const s = await api('/seed/preview');
-    const line = (label, o, extra = '') =>
-      `<div class="sb-row"><div class="body">
-        <div class="teams">${label}: ${o.newOnes} جديدة</div>
-        <div class="meta">${o.total} في الملف${
-          o.total - o.newOnes ? ` · ${o.total - o.newOnes} موجودة مسبقاً` : ''
-        }${extra}</div>
-      </div></div>`;
-    box.innerHTML =
-      line('البطولات', s.tournaments) +
-      line('المباريات', s.matches, ` · تُسنَد إلى «${s.matches.tournament}»`);
-  } catch (err) {
-    box.innerHTML = `<p class="empty">تعذّر الفحص: ${err.message}</p>`;
-  }
-}
-
 async function loadScoreboardTournaments() {
   const box = $('#sb-tournaments-list');
   box.innerHTML = '<p class="empty">جارٍ الجلب…</p>';
@@ -831,10 +811,6 @@ document.addEventListener('click', async (e) => {
         openDialog(t.dataset.open);
         return loadScoreboardTournaments();
       }
-      if (t.dataset.open === 'dlg-seed') {
-        openDialog(t.dataset.open);
-        return loadSeedPreview();
-      }
       if (t.dataset.open === 'dlg-match-file') {
         $('#file-target-name').textContent = tour?.name || '—';
         $('#file-preview').hidden = true;
@@ -1037,17 +1013,6 @@ document.addEventListener('submit', async (e) => {
       const r = await api('/referees/import', { method: 'POST', body: { text } });
       await loadSidebar();
       toast(importMessage('حكم', r));
-    }
-    if (kind === 'seed') {
-      toast('جارٍ التعبئة…');
-      const r = await api('/seed', { method: 'POST' });
-      await loadSidebar();
-      if (r.tournamentId) {
-        state.tournamentId = r.tournamentId;
-        renderTournaments();
-        await loadBoard();
-      }
-      toast(`أُضيفت ${r.addedTournaments} بطولة و${r.addedMatches} مباراة`);
     }
     if (kind === 'sb-tournaments') {
       const names = Array.from(form.querySelectorAll('[data-sb-tname]:checked')).map(
