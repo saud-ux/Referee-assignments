@@ -126,9 +126,16 @@ h1, h2, h3, .tally b {
 
 /* قائمة الحكّام تحتاج تكون مضغوطة لأن العدد يوصل مئات */
 #referees {
-  max-height: 420px;
+  max-height: min(45dvh, 420px);
   overflow-y: auto;
   overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+#tournaments {
+  max-height: min(35dvh, 300px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 }
 #referees li {
   padding: 6px 12px;
