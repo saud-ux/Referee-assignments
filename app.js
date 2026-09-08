@@ -91,6 +91,32 @@ function importMessage(kind, r) {
   return parts.join(' — ');
 }
 
+async function loadScoreboardTournaments() {
+  const box = $('#sb-tournaments-list');
+  box.innerHTML = '<p class="empty">جارٍ الجلب…</p>';
+  try {
+    const rows = await api('/scoreboard/tournaments');
+    state.sbTournaments = rows;
+    if (!rows.length) {
+      box.innerHTML = '<p class="empty">لم يُستنبط أي اسم بطولة من السكوربورد.</p>';
+      return;
+    }
+    box.innerHTML = rows
+      .map(
+        (r) => `<label class="sb-row ${r.exists ? 'done' : ''}">
+          <input type="checkbox" data-sb-tname="${r.name}" ${r.exists ? 'disabled' : 'checked'} />
+          <div class="body">
+            <div class="teams">${r.name}</div>
+            <div class="meta">${r.count} مباراة</div>
+          </div>
+        </label>`
+      )
+      .join('');
+  } catch (err) {
+    box.innerHTML = `<p class="empty">تعذّر الجلب: ${err.message}</p>`;
+  }
+}
+
 async function loadScoreboard() {
   const box = $('#sb-list');
   box.innerHTML = '<p class="empty">جارٍ الجلب…</p>';
@@ -124,6 +150,7 @@ async function loadScoreboard() {
 
 document.addEventListener('click', (e) => {
   if (e.target.id === 'sb-refresh') loadScoreboard();
+  if (e.target.id === 'sb-tournaments-refresh') loadScoreboardTournaments();
   if (e.target.id === 'btn-download-tpl') downloadTemplate();
   if (e.target.id === 'btn-download-ref-tpl') downloadRefereesTemplate();
 });
@@ -475,6 +502,10 @@ document.addEventListener('click', async (e) => {
         openDialog(t.dataset.open);
         return loadScoreboard();
       }
+      if (t.dataset.open === 'dlg-sb-tournaments') {
+        openDialog(t.dataset.open);
+        return loadScoreboardTournaments();
+      }
       if (t.dataset.open === 'dlg-match-file') {
         $('#file-target-name').textContent = tour?.name || '—';
         $('#file-preview').hidden = true;
@@ -622,6 +653,21 @@ document.addEventListener('submit', async (e) => {
       const r = await api('/referees/import', { method: 'POST', body: { text } });
       await loadSidebar();
       toast(importMessage('حكم', r));
+    }
+    if (kind === 'sb-tournaments') {
+      const names = Array.from(form.querySelectorAll('[data-sb-tname]:checked')).map(
+        (el) => el.dataset.sbTname
+      );
+      if (!names.length) {
+        toast('لم تُحدَّد أي بطولة');
+        return;
+      }
+      const r = await api('/scoreboard/tournaments/import', {
+        method: 'POST',
+        body: { names },
+      });
+      await loadSidebar();
+      toast(importMessage('بطولة', r));
     }
     if (kind === 'sb-import') {
       const keys = Array.from(form.querySelectorAll('[data-sb-key]:checked')).map((el) =>

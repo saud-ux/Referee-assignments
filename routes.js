@@ -195,6 +195,45 @@ router.get('/scoreboard/preview', async (_req, res) => {
   }
 });
 
+router.get('/scoreboard/tournaments', async (_req, res) => {
+  try {
+    const rows = await scoreboard.fetchScoreboardTournaments();
+    const existing = new Set((await store.list('tournaments')).map((t) => t.name));
+    res.json(rows.map((r) => ({ ...r, exists: existing.has(r.name) })));
+  } catch (err) {
+    bad(res, err.message);
+  }
+});
+
+router.post('/scoreboard/tournaments/import', async (req, res) => {
+  const names = Array.isArray(req.body?.names)
+    ? req.body.names.map((s) => String(s).trim()).filter(Boolean)
+    : [];
+  if (!names.length) return bad(res, 'اختر بطولة واحدة على الأقل');
+  const existing = new Set((await store.list('tournaments')).map((t) => t.name));
+  const added = [];
+  const skipped = [];
+  for (const name of names) {
+    if (existing.has(name)) {
+      skipped.push({ line: name, reason: 'موجودة' });
+      continue;
+    }
+    added.push(
+      await store.insert('tournaments', {
+        id: newId(),
+        name,
+        city: '',
+        venue: '',
+        startDate: '',
+        endDate: '',
+        source: 'scoreboard',
+        createdAt: now(),
+      })
+    );
+  }
+  res.status(201).json({ added: added.length, skipped });
+});
+
 router.post('/scoreboard/import', async (req, res) => {
   const { tournamentId, keys } = req.body || {};
   if (!tournamentId) return bad(res, 'اختر البطولة أولاً');

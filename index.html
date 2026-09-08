@@ -30,7 +30,8 @@
       <div class="panel-head">
         <h2>البطولات</h2>
         <div class="head-actions">
-          <button class="link" data-open="dlg-import-tournaments">استيراد</button>
+          <button class="link" data-open="dlg-sb-tournaments"><b>استيراد</b></button>
+          <button class="link" data-open="dlg-import-tournaments">من نص</button>
           <button class="link" data-open="dlg-tournament">إضافة</button>
         </div>
       </div>
@@ -159,7 +160,27 @@
   </form>
 </dialog>
 
-<!-- استيراد من السكوربورد -->
+<!-- استيراد بطولات من السكوربورد -->
+<dialog id="dlg-sb-tournaments">
+  <form method="dialog" class="form" data-form="sb-tournaments">
+    <div class="form-head">
+      <h3>استيراد بطولات من السكوربورد</h3>
+      <button type="button" class="dlg-close" data-close aria-label="إغلاق">×</button>
+    </div>
+    <p class="hint">
+      يُستنبط اسم البطولة تلقائياً من بيانات المباريات في السكوربورد.<br>
+      البطولات المُنشأة سابقاً تظهر معطّلة.
+    </p>
+    <div id="sb-tournaments-list" class="sb-list"><p class="empty">جارٍ الجلب…</p></div>
+    <menu>
+      <button type="button" class="btn ghost" id="sb-tournaments-refresh">تحديث</button>
+      <button value="cancel" class="btn ghost" formnovalidate>إلغاء</button>
+      <button value="save" class="btn">إنشاء المحدّد</button>
+    </menu>
+  </form>
+</dialog>
+
+<!-- استيراد مباريات من السكوربورد -->
 <dialog id="dlg-sb-import">
   <form method="dialog" class="form" data-form="sb-import">
     <div class="form-head">
