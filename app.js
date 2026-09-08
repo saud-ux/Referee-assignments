@@ -508,15 +508,30 @@ function renderBoard() {
           }${a.error ? `<br><span class="facts">${a.error}</span>` : ''}</div>`
         : '<div class="status">لم يُكلَّف حكم بعد</div>';
 
-      const actions = a
-        ? ['sent', 'pending'].includes(a.status)
-          ? `${a.token ? `<button class="btn small" data-wa="${a.id}">إرسال واتساب</button>
-             <button class="btn ghost small" data-copy="${a.id}">نسخ الرابط</button>` : ''}
-             <button class="btn ghost small" data-mark="${a.id}" data-value="accepted">تسجيل قبول</button>
-             <button class="btn danger small" data-mark="${a.id}" data-value="declined">تسجيل اعتذار</button>
-             <button class="btn ghost small" data-cancel="${a.id}">إلغاء التكليف</button>`
-          : `<button class="btn small" data-assign="${m.id}">تكليف حكم آخر</button>`
-        : `<button class="btn small" data-assign="${m.id}">تكليف حكم</button>`;
+      const btns = [];
+      if (!a) {
+        btns.push(`<button class="btn small" data-assign="${m.id}">تكليف حكم</button>`);
+      } else if (['sent', 'pending'].includes(a.status)) {
+        // بانتظار الرد: أرسل الدعوة، أو سجّل الرد يدوياً، أو ألغِ
+        if (a.token) {
+          btns.push(
+            `<button class="btn small" data-wa="${a.id}">إرسال واتساب</button>`,
+            `<button class="btn ghost small" data-copy="${a.id}">نسخ الرابط</button>`
+          );
+        }
+        btns.push(
+          `<button class="btn ghost small" data-mark="${a.id}" data-value="accepted">تسجيل قبول</button>`,
+          `<button class="btn danger small" data-mark="${a.id}" data-value="declined">تسجيل اعتذار</button>`,
+          `<button class="btn ghost small" data-cancel="${a.id}">إلغاء التكليف</button>`
+        );
+      } else if (a.status === 'accepted') {
+        // قَبِل الحكم: الإلغاء هو الطريق الوحيد لتحرير المباراة لحكم آخر
+        btns.push(`<button class="btn danger small" data-cancel="${a.id}">إلغاء التكليف</button>`);
+      } else {
+        // اعتذر أو انتهت المهلة أو أُلغي: المباراة متاحة لحكم جديد
+        btns.push(`<button class="btn small" data-assign="${m.id}">تكليف حكم آخر</button>`);
+      }
+      const actions = btns.join('\n');
 
       return `<article class="match" data-state="${st}">
         <div>
@@ -649,6 +664,13 @@ document.addEventListener('click', async (e) => {
     }
 
     if (t.dataset.cancel) {
+      const a = state.assignments.find((x) => x.id === t.dataset.cancel);
+      const who = a ? refereeName(a.refereeId) : 'الحكم';
+      const warn =
+        a?.status === 'accepted'
+          ? `${who} قبل هذا التكليف. إلغاؤه يعني أنه لن يدير المباراة — تأكد من إبلاغه.\n\nمتأكد؟`
+          : `إلغاء تكليف ${who}؟`;
+      if (!confirm(warn)) return;
       await api(`/assignments/${t.dataset.cancel}/cancel`, { method: 'POST' });
       toast('أُلغي التكليف');
       return loadBoard();
