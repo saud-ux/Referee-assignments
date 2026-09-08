@@ -260,6 +260,7 @@ document.addEventListener('click', (e) => {
   if (e.target.id === 'sb-tournaments-refresh') loadScoreboardTournaments();
   if (e.target.id === 'btn-download-tpl') downloadTemplate();
   if (e.target.id === 'btn-download-ref-tpl') downloadRefereesTemplate();
+  if (e.target.id === 'btn-download-t-tpl') downloadTournamentsTemplate();
   if (e.target.id === 'btn-export') exportAssignments();
 });
 
@@ -284,6 +285,14 @@ const REFEREE_HEADERS = {
   phone: ['رقم الجوال', 'الجوال', 'الهاتف', 'phone', 'mobile'],
 };
 
+const TOURNAMENT_HEADERS = {
+  name: ['اسم البطولة', 'الاسم', 'name'],
+  city: ['المدينة', 'city'],
+  venue: ['الصالة', 'المكان', 'venue'],
+  startDate: ['من', 'من (YYYY-MM-DD)', 'بداية', 'startDate'],
+  endDate: ['إلى', 'إلى (YYYY-MM-DD)', 'نهاية', 'endDate'],
+};
+
 function mapHeader(cell, dict) {
   const s = String(cell || '').trim();
   for (const [key, aliases] of Object.entries(dict)) {
@@ -294,6 +303,14 @@ function mapHeader(cell, dict) {
 
 const matchHeader = (c) => mapHeader(c, MATCH_HEADERS);
 const refHeader = (c) => mapHeader(c, REFEREE_HEADERS);
+const tHeader = (c) => mapHeader(c, TOURNAMENT_HEADERS);
+
+/** يحوّل قيمة التاريخ من Excel إلى YYYY-MM-DD */
+function normalizeDate(v) {
+  if (!v) return '';
+  if (v instanceof Date) return v.toISOString().slice(0, 10);
+  return String(v).trim().slice(0, 10);
+}
 
 function normalizeTime(v) {
   if (!v) return '';
@@ -312,9 +329,12 @@ function parseWorkbook(file, kind = 'match') {
         const sheet = wb.Sheets[wb.SheetNames[0]];
         const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '', blankrows: false });
         if (!rows.length) return resolve([]);
-        const mapFn = kind === 'referee' ? refHeader : matchHeader;
+        const mapFn = kind === 'referee' ? refHeader : kind === 'tournament' ? tHeader : matchHeader;
         const headerRow = rows[0].map(mapFn);
-        const required = kind === 'referee' ? ['name', 'phone', 'refereeNumber'] : ['clubA', 'clubB'];
+        const required =
+          kind === 'referee' ? ['name', 'phone', 'refereeNumber']
+          : kind === 'tournament' ? ['name']
+          : ['clubA', 'clubB'];
         const out = [];
         for (let i = 1; i < rows.length; i++) {
           const raw = rows[i];
@@ -322,9 +342,9 @@ function parseWorkbook(file, kind = 'match') {
           const rec = {};
           headerRow.forEach((key, idx) => {
             if (!key) return;
-            rec[key] = key === 'startTime'
-              ? normalizeTime(raw[idx])
-              : String(raw[idx] || '').trim();
+            if (key === 'startTime') rec[key] = normalizeTime(raw[idx]);
+            else if (key === 'startDate' || key === 'endDate') rec[key] = normalizeDate(raw[idx]);
+            else rec[key] = String(raw[idx] || '').trim();
           });
           if (required.every((k) => rec[k])) out.push(rec);
         }
@@ -390,6 +410,33 @@ async function handleRefFilePicked(file) {
   } catch (err) {
     box.innerHTML = `<p class="empty">خطأ في الملف: ${err.message}</p>`;
     state.refFileRows = [];
+  }
+}
+
+async function handleTournamentsFilePicked(file) {
+  const box = $('#t-file-preview');
+  box.hidden = false;
+  box.innerHTML = '<p class="empty">جارٍ القراءة…</p>';
+  try {
+    const rows = await parseWorkbook(file, 'tournament');
+    state.tFileRows = rows;
+    if (!rows.length) {
+      box.innerHTML = '<p class="empty">ما لقيت بيانات صالحة. تأكّد من عناوين الأعمدة.</p>';
+      return;
+    }
+    box.innerHTML = rows
+      .map(
+        (r) => `<div class="sb-row">
+          <div class="body">
+            <div class="teams">${r.name}</div>
+            <div class="meta">${[r.city, r.venue, [r.startDate, r.endDate].filter(Boolean).join(' → ')].filter(Boolean).join(' · ')}</div>
+          </div>
+        </div>`
+      )
+      .join('');
+  } catch (err) {
+    box.innerHTML = `<p class="empty">خطأ في الملف: ${err.message}</p>`;
+    state.tFileRows = [];
   }
 }
 
@@ -498,6 +545,9 @@ document.addEventListener('change', (e) => {
   if (e.target.id === 'ref-file-input' && e.target.files[0]) {
     handleRefFilePicked(e.target.files[0]);
   }
+  if (e.target.id === 't-file-input' && e.target.files[0]) {
+    handleTournamentsFilePicked(e.target.files[0]);
+  }
 });
 
 function downloadTemplate() {
@@ -518,6 +568,17 @@ function downloadRefereesTemplate() {
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'الحكّام');
   XLSX.writeFile(wb, 'قالب-الحكّام.xlsx');
+}
+
+function downloadTournamentsTemplate() {
+  if (typeof XLSX === 'undefined') return toast('مكتبة Excel لم تُحمَّل بعد');
+  const ws = XLSX.utils.aoa_to_sheet([
+    ['اسم البطولة', 'المدينة', 'الصالة', 'من (YYYY-MM-DD)', 'إلى (YYYY-MM-DD)'],
+  ]);
+  ws['!cols'] = [{ wch: 38 }, { wch: 16 }, { wch: 24 }, { wch: 18 }, { wch: 18 }];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'البطولات');
+  XLSX.writeFile(wb, 'قالب-البطولات.xlsx');
 }
 
 const liveAssignment = (matchId) =>
@@ -1030,6 +1091,18 @@ document.addEventListener('submit', async (e) => {
       const r = await api('/referees/import', { method: 'POST', body: { text } });
       await loadSidebar();
       toast(importMessage('حكم', r));
+    }
+    if (kind === 'tournaments-file') {
+      if (!state.tFileRows?.length) {
+        toast('لم يُحدَّد ملف صالح');
+        return;
+      }
+      const text = state.tFileRows
+        .map((r) => [r.name, r.city, r.venue, r.startDate, r.endDate].join(','))
+        .join('\n');
+      const r = await api('/tournaments/import', { method: 'POST', body: { text } });
+      await loadSidebar();
+      toast(importMessage('بطولة', r));
     }
     if (kind === 'sb-tournaments') {
       const names = Array.from(form.querySelectorAll('[data-sb-tname]:checked')).map(
