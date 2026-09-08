@@ -130,6 +130,18 @@ h1, h2, h3, .tally b {
 .list .del:hover { color: var(--red); background: var(--ball-soft); }
 .empty { padding: 16px 14px; color: var(--muted); font-size: 13.5px; }
 
+.search-wrap { padding: 8px 10px; border-bottom: 1px solid var(--line); }
+.search-wrap input {
+  font: inherit;
+  font-size: 14px;
+  width: 100%;
+  padding: 7px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfcfc;
+  color: var(--ink);
+}
+
 /* ---------- العدّاد ---------- */
 .tally {
   display: grid;
@@ -177,6 +189,7 @@ h1, h2, h3, .tally b {
 .match[data-state="accepted"] { border-right-color: var(--table); }
 .match[data-state="sent"] { border-right-color: var(--ball); }
 .match[data-state="declined"] { border-right-color: var(--red); }
+.match[data-state="expired"] { border-right-color: #b0761f; }
 
 .match .players { font-size: 17px; font-weight: 600; }
 .match .facts { font-size: 13px; color: var(--muted); }
@@ -185,6 +198,7 @@ h1, h2, h3, .tally b {
 .match[data-state="accepted"] .status b { color: var(--table); }
 .match[data-state="sent"] .status b { color: var(--ball); }
 .match[data-state="declined"] .status b { color: var(--red); }
+.match[data-state="expired"] .status b { color: #b0761f; }
 .match .actions { display: flex; flex-direction: column; gap: 6px; }
 
 .btn {

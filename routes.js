@@ -8,6 +8,49 @@ export const router = express.Router();
 const now = () => new Date().toISOString();
 const bad = (res, msg, code = 400) => res.status(code).json({ error: msg });
 
+/** المدة التي تُعتبر خلالها مباراتان متعارضتين على نفس الحكم */
+const CONFLICT_WINDOW_MS = Number(process.env.CONFLICT_WINDOW_MINUTES || 90) * 60_000;
+/** مهلة انتظار رد الحكم قبل اعتبار التكليف منتهياً */
+const RESPONSE_TIMEOUT_MS = Number(process.env.RESPONSE_TIMEOUT_HOURS || 6) * 3_600_000;
+
+const OPEN_STATUSES = ['pending', 'sent', 'accepted'];
+
+/** يبحث عن مباراة أخرى مكلّف بها نفس الحكم ضمن نافذة التعارض */
+async function findConflict(refereeId, match) {
+  if (!match?.startTime) return null;
+  const target = new Date(match.startTime).getTime();
+  if (Number.isNaN(target)) return null;
+
+  const mine = (await store.list('assignments', { refereeId })).filter(
+    (a) => OPEN_STATUSES.includes(a.status) && a.matchId !== match.id
+  );
+
+  for (const a of mine) {
+    const other = await store.get('matches', a.matchId);
+    if (!other?.startTime) continue;
+    const t = new Date(other.startTime).getTime();
+    if (Number.isNaN(t)) continue;
+    if (Math.abs(t - target) < CONFLICT_WINDOW_MS) return { assignment: a, match: other };
+  }
+  return null;
+}
+
+/** يحوّل التكاليف التي تجاوزت مهلة الرد إلى الحالة "expired" */
+export async function sweepExpired() {
+  const cutoff = Date.now() - RESPONSE_TIMEOUT_MS;
+  const rows = await store.list('assignments', {});
+  const expired = [];
+  for (const a of rows) {
+    if (a.status !== 'sent' || !a.sentAt) continue;
+    const t = new Date(a.sentAt).getTime();
+    if (Number.isNaN(t) || t > cutoff) continue;
+    await store.update('assignments', a.id, { status: 'expired', respondedAt: now() });
+    expired.push(a.id);
+  }
+  if (expired.length) console.log(`[مهلة] انتهت مهلة ${expired.length} تكليف`);
+  return expired.length;
+}
+
 const fmtDateTime = (iso) => {
   if (!iso) return '—';
   const d = new Date(iso);
@@ -304,6 +347,18 @@ router.post('/matches/import', async (req, res) => {
   res.status(201).json({ added: added.length, skipped });
 });
 
+router.patch('/matches/:id', async (req, res) => {
+  const patch = {};
+  for (const k of ['clubA', 'clubB', 'startTime', 'table', 'round', 'category']) {
+    if (k in (req.body || {})) patch[k] = String(req.body[k] ?? '').trim();
+  }
+  if (!Object.keys(patch).length) return bad(res, 'لا يوجد ما يُحدَّث');
+  if ('clubA' in patch && !patch.clubA) return bad(res, 'اسم النادي الأول مطلوب');
+  if ('clubB' in patch && !patch.clubB) return bad(res, 'اسم النادي الثاني مطلوب');
+  const row = await store.update('matches', req.params.id, patch);
+  row ? res.json(row) : bad(res, 'المباراة غير موجودة', 404);
+});
+
 router.delete('/matches/:id', async (req, res) => {
   for (const a of await store.list('assignments', { matchId: req.params.id })) {
     await store.remove('assignments', a.id);
@@ -361,7 +416,7 @@ async function dispatch(assignment) {
 }
 
 router.post('/assignments', async (req, res) => {
-  const { matchId, refereeId, role = 'حكم مباراة' } = req.body || {};
+  const { matchId, refereeId, role = 'حكم مباراة', force = false } = req.body || {};
   if (!matchId || !refereeId) return bad(res, 'المباراة والحكم مطلوبان');
 
   const match = await store.get('matches', matchId);
@@ -370,6 +425,18 @@ router.post('/assignments', async (req, res) => {
   const existing = await store.list('assignments', { matchId });
   if (existing.some((a) => ['sent', 'accepted'].includes(a.status))) {
     return bad(res, 'يوجد تكليف قائم لهذه المباراة — ألغِه أولاً');
+  }
+
+  if (!force) {
+    const clash = await findConflict(refereeId, match);
+    if (clash) {
+      const other = clash.match;
+      const label = `${other.clubA || other.playerA || '—'} × ${other.clubB || other.playerB || '—'}`;
+      return res.status(409).json({
+        error: `الحكم مكلّف بمباراة أخرى قريبة زمنياً: ${label} — ${fmtDateTime(other.startTime)}`,
+        conflict: true,
+      });
+    }
   }
 
   const assignment = await store.insert('assignments', {

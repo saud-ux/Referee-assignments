@@ -7,6 +7,8 @@ const state = {
   assignments: [],
   tournamentId: null,
   assignMatchId: null,
+  editMatchId: null,
+  refQuery: '',
 };
 
 const STATUS = {
@@ -16,6 +18,7 @@ const STATUS = {
   declined: 'اعتذر',
   cancelled: 'ملغى',
   failed: 'فشل الإرسال',
+  expired: 'انتهت المهلة — لم يرد',
 };
 
 /* ---------------- أدوات ---------------- */
@@ -153,6 +156,7 @@ document.addEventListener('click', (e) => {
   if (e.target.id === 'sb-tournaments-refresh') loadScoreboardTournaments();
   if (e.target.id === 'btn-download-tpl') downloadTemplate();
   if (e.target.id === 'btn-download-ref-tpl') downloadRefereesTemplate();
+  if (e.target.id === 'btn-export') exportAssignments();
 });
 
 /* ------- استيراد من ملف Excel ------- */
@@ -280,6 +284,59 @@ async function handleRefFilePicked(file) {
   }
 }
 
+document.addEventListener('input', (e) => {
+  if (e.target.id === 'ref-search') {
+    state.refQuery = e.target.value;
+    renderReferees();
+  }
+});
+
+/* ------- تصدير كشف التكليفات ------- */
+function exportAssignments() {
+  if (typeof XLSX === 'undefined') return toast('مكتبة Excel لم تُحمَّل بعد');
+  const tour = state.tournaments.find((t) => t.id === state.tournamentId);
+  if (!state.matches.length) return toast('لا توجد مباريات للتصدير');
+
+  const header = [
+    'النادي الأول',
+    'النادي الثاني',
+    'الموعد',
+    'الطاولة',
+    'الدور',
+    'الفئة',
+    'الحكم',
+    'رقم الحكم',
+    'الحالة',
+  ];
+
+  const rows = state.matches.map((m) => {
+    const a = liveAssignment(m.id);
+    const ref = a ? state.referees.find((r) => r.id === a.refereeId) : null;
+    return [
+      m.clubA || m.playerA || '',
+      m.clubB || m.playerB || '',
+      m.startTime ? fmtTime(m.startTime) : '',
+      m.table || '',
+      m.round || '',
+      m.category || '',
+      ref?.name || (a ? 'حكم محذوف' : ''),
+      ref?.phone || '',
+      a ? STATUS[a.status] || a.status : 'بلا حكم',
+    ];
+  });
+
+  const ws = XLSX.utils.aoa_to_sheet([header, ...rows]);
+  ws['!cols'] = [
+    { wch: 16 }, { wch: 16 }, { wch: 26 }, { wch: 8 },
+    { wch: 14 }, { wch: 10 }, { wch: 20 }, { wch: 16 }, { wch: 18 },
+  ];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'التكليفات');
+  const safe = (tour?.name || 'البطولة').replace(/[\\/:*?"<>|]/g, '-');
+  XLSX.writeFile(wb, `كشف-التكليفات-${safe}.xlsx`);
+  toast(`صُدِّرت ${rows.length} مباراة`);
+}
+
 document.addEventListener('change', (e) => {
   if (e.target.id === 'file-input' && e.target.files[0]) {
     handleFilePicked(e.target.files[0]);
@@ -312,7 +369,10 @@ function downloadRefereesTemplate() {
 const liveAssignment = (matchId) =>
   state.assignments.find(
     (a) => a.matchId === matchId && ['pending', 'sent', 'accepted'].includes(a.status)
-  ) || state.assignments.find((a) => a.matchId === matchId && a.status === 'declined');
+  ) ||
+  state.assignments.find(
+    (a) => a.matchId === matchId && ['declined', 'expired'].includes(a.status)
+  );
 
 /* ---------------- التحميل ---------------- */
 async function loadSidebar() {
@@ -358,7 +418,18 @@ function renderReferees() {
     ul.innerHTML = '<li class="empty">أضف الحكّام لتتمكن من تكليفهم.</li>';
     return;
   }
-  ul.innerHTML = state.referees
+  const q = state.refQuery.trim().toLowerCase();
+  const rows = q
+    ? state.referees.filter((r) =>
+        [r.name, r.phone, r.city].some((v) => String(v || '').toLowerCase().includes(q))
+      )
+    : state.referees;
+
+  if (!rows.length) {
+    ul.innerHTML = `<li class="empty">لا نتائج لـ "${q}".</li>`;
+    return;
+  }
+  ul.innerHTML = rows
     .map(
       (r) => `<li>
         <span class="pick">${r.name}
@@ -377,6 +448,7 @@ function renderBoard() {
   $('#btn-add-match').hidden = !tournament;
   $('#btn-sb-import').hidden = !tournament;
   $('#btn-file-import').hidden = !tournament;
+  $('#btn-export').hidden = !tournament;
   $('#tally').hidden = !tournament;
   $('#board-title').textContent = tournament ? tournament.name : 'اختر بطولة للبدء';
 
@@ -424,6 +496,7 @@ function renderBoard() {
           ${status}
         </div>
         <div class="actions">${actions}
+          <button class="btn ghost small" data-edit-match="${m.id}">تعديل</button>
           <button class="btn ghost small" data-del-match="${m.id}">حذف المباراة</button>
         </div>
       </article>`;
@@ -439,7 +512,7 @@ function updateTally() {
     const a = liveAssignment(m.id);
     if (!a) counts.empty++;
     else if (a.status === 'accepted') counts.accepted++;
-    else if (a.status === 'declined') counts.declined++;
+    else if (['declined', 'expired'].includes(a.status)) counts.declined++;
     else counts.sent++;
   }
   $('#n-accepted').textContent = counts.accepted;
@@ -468,7 +541,7 @@ document.addEventListener('click', async (e) => {
     }
   }
 
-  const t = e.target.closest('[data-open], [data-tournament], [data-assign], [data-cancel], [data-mark], [data-del-tournament], [data-del-referee], [data-del-match]');
+  const t = e.target.closest('[data-open], [data-tournament], [data-assign], [data-cancel], [data-mark], [data-del-tournament], [data-del-referee], [data-del-match], [data-edit-match]');
   if (!t) return;
 
   try {
@@ -500,6 +573,20 @@ document.addEventListener('click', async (e) => {
       state.tournamentId = t.dataset.tournament;
       renderTournaments();
       return loadBoard();
+    }
+
+    if (t.dataset.editMatch) {
+      const m = state.matches.find((x) => x.id === t.dataset.editMatch);
+      if (!m) return;
+      state.editMatchId = m.id;
+      const f = document.querySelector('[data-form="edit-match"]');
+      f.clubA.value = m.clubA || m.playerA || '';
+      f.clubB.value = m.clubB || m.playerB || '';
+      f.startTime.value = (m.startTime || '').slice(0, 16);
+      f.table.value = m.table || '';
+      f.round.value = m.round || '';
+      f.category.value = m.category || '';
+      return openDialog('dlg-edit-match');
     }
 
     if (t.dataset.assign) {
@@ -582,11 +669,23 @@ document.addEventListener('submit', async (e) => {
       await loadBoard();
       toast('أُضيفت المباراة');
     }
+    if (kind === 'edit-match') {
+      await api(`/matches/${state.editMatchId}`, { method: 'PATCH', body });
+      await loadBoard();
+      toast('حُفظ التعديل');
+    }
     if (kind === 'assign') {
-      await api('/assignments', {
-        method: 'POST',
-        body: { matchId: state.assignMatchId, refereeId: body.refereeId },
-      });
+      const payload = { matchId: state.assignMatchId, refereeId: body.refereeId };
+      try {
+        await api('/assignments', { method: 'POST', body: payload });
+      } catch (err) {
+        if (!/مكلّف بمباراة أخرى/.test(err.message)) throw err;
+        if (!confirm(`${err.message}\n\nتبي تكمل التكليف رغم التعارض؟`)) {
+          toast('أُلغي التكليف');
+          return;
+        }
+        await api('/assignments', { method: 'POST', body: { ...payload, force: true } });
+      }
       await loadBoard();
       toast('أُرسل التكليف');
     }

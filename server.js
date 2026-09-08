@@ -2,7 +2,7 @@ import express from 'express';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { initStore } from './store.js';
-import { router, webhook } from './routes.js';
+import { router, webhook, sweepExpired } from './routes.js';
 import { authRoutes, guard, isLocked } from './auth.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -60,3 +60,8 @@ app.listen(PORT, () => {
   console.log(`النظام يعمل على المنفذ ${PORT}`);
   if (!isLocked()) console.warn('[تنبيه] ADMIN_PASSWORD غير مضبوطة — اللوحة مفتوحة للجميع');
 });
+
+// كنس التكاليف التي تجاوزت مهلة الرد
+const sweep = () => sweepExpired().catch((err) => console.error('[مهلة] خطأ:', err));
+sweep();
+setInterval(sweep, 10 * 60_000);

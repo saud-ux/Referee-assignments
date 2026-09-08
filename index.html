@@ -43,6 +43,9 @@
           <button class="link" data-open="dlg-referee">إضافة</button>
         </div>
       </div>
+      <div class="search-wrap">
+        <input type="search" id="ref-search" placeholder="ابحث باسم أو رقم…" />
+      </div>
       <ul class="list" id="referees"></ul>
     </section>
   </aside>
@@ -61,6 +64,7 @@
         <button class="btn" id="btn-sb-import" hidden data-open="dlg-sb-import">استيراد</button>
         <button class="btn ghost" id="btn-file-import" hidden data-open="dlg-match-file">من ملف Excel</button>
         <button class="btn ghost" id="btn-add-match" hidden data-open="dlg-match">إضافة يدوية</button>
+        <button class="btn ghost" id="btn-export" hidden>تصدير الكشف</button>
       </div>
     </div>
 
@@ -131,6 +135,32 @@
     <menu>
       <button value="cancel" class="btn ghost" formnovalidate>إلغاء</button>
       <button value="save" class="btn">حفظ المباراة</button>
+    </menu>
+  </form>
+</dialog>
+
+<!-- تعديل مباراة -->
+<dialog id="dlg-edit-match">
+  <form method="dialog" class="form" data-form="edit-match">
+    <div class="form-head">
+      <h3>تعديل المباراة</h3>
+      <button type="button" class="dlg-close" data-close aria-label="إغلاق">×</button>
+    </div>
+    <div class="row">
+      <label>النادي الأول <input name="clubA" required /></label>
+      <label>النادي الثاني <input name="clubB" required /></label>
+    </div>
+    <div class="row">
+      <label>الموعد <input name="startTime" type="datetime-local" /></label>
+      <label>الطاولة <input name="table" /></label>
+    </div>
+    <div class="row">
+      <label>الدور <input name="round" /></label>
+      <label>الفئة <input name="category" /></label>
+    </div>
+    <menu>
+      <button value="cancel" class="btn ghost" formnovalidate>إلغاء</button>
+      <button value="save" class="btn">حفظ التعديل</button>
     </menu>
   </form>
 </dialog>
