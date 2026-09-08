@@ -85,6 +85,12 @@ const fmtTime = (iso) =>
 
 const refereeName = (id) => state.referees.find((r) => r.id === id)?.name || 'حكم محذوف';
 
+function importMessage(kind, r) {
+  const parts = [`استُورد ${r.added} ${kind}`];
+  if (r.skipped?.length) parts.push(`تُخطّي ${r.skipped.length} سطر`);
+  return parts.join(' — ');
+}
+
 const liveAssignment = (matchId) =>
   state.assignments.find(
     (a) => a.matchId === matchId && ['pending', 'sent', 'accepted'].includes(a.status)
@@ -159,6 +165,7 @@ function renderBoard() {
   const tournament = state.tournaments.find((t) => t.id === state.tournamentId);
 
   $('#btn-add-match').hidden = !tournament;
+  $('#btn-import-matches').hidden = !tournament;
   $('#tally').hidden = !tournament;
   $('#board-title').textContent = tournament ? tournament.name : 'اختر بطولة للبدء';
 
@@ -255,7 +262,8 @@ document.addEventListener('click', async (e) => {
 
   try {
     if (t.dataset.open) {
-      if (t.dataset.open === 'dlg-match' && !state.tournamentId) {
+      const needsTournament = ['dlg-match', 'dlg-import-matches'].includes(t.dataset.open);
+      if (needsTournament && !state.tournamentId) {
         return toast('اختر بطولة أولاً');
       }
       return openDialog(t.dataset.open);
@@ -353,6 +361,24 @@ document.addEventListener('submit', async (e) => {
       });
       await loadBoard();
       toast('أُرسل التكليف');
+    }
+    if (kind === 'import-referees') {
+      const r = await api('/referees/import', { method: 'POST', body: { text: body.text } });
+      await loadSidebar();
+      toast(importMessage('حكم', r));
+    }
+    if (kind === 'import-tournaments') {
+      const r = await api('/tournaments/import', { method: 'POST', body: { text: body.text } });
+      await loadSidebar();
+      toast(importMessage('بطولة', r));
+    }
+    if (kind === 'import-matches') {
+      const r = await api('/matches/import', {
+        method: 'POST',
+        body: { text: body.text, tournamentId: state.tournamentId },
+      });
+      await loadBoard();
+      toast(importMessage('مباراة', r));
     }
     form.reset();
   } catch (err) {

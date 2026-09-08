@@ -249,7 +249,7 @@ dialog::backdrop { background: rgba(20, 32, 43, 0.45); }
 }
 .dlg-close:hover { background: var(--ball-soft); color: var(--red); }
 .form label { display: grid; gap: 5px; font-size: 13.5px; color: var(--muted); }
-.form input, .form select {
+.form input, .form select, .form textarea {
   font: inherit;
   font-size: 15px;
   color: var(--ink);
@@ -258,6 +258,27 @@ dialog::backdrop { background: rgba(20, 32, 43, 0.45); }
   border-radius: 8px;
   background: #fbfcfc;
   width: 100%;
+}
+.form textarea {
+  min-height: 140px;
+  resize: vertical;
+  font-family: "IBM Plex Sans Arabic", ui-monospace, monospace;
+  line-height: 1.7;
+}
+.hint code {
+  background: var(--table-soft);
+  color: var(--table);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 12.5px;
+  direction: ltr;
+  display: inline-block;
+}
+.head-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  align-items: center;
 }
 .form .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .form menu {

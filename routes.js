@@ -64,6 +64,41 @@ router.delete('/referees/:id', async (req, res) => {
   res.status(204).end();
 });
 
+function parseImportLines(text) {
+  return String(text || '')
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line && !line.startsWith('#'))
+    .map((line) => line.split(/\s*[,،\t]\s*/));
+}
+
+router.post('/referees/import', async (req, res) => {
+  const rows = parseImportLines(req.body?.text);
+  const added = [];
+  const skipped = [];
+  for (const [name, phone, city = '', level = ''] of rows) {
+    if (!name || !phone) {
+      skipped.push({ line: [name, phone].join(','), reason: 'الاسم أو الجوال ناقص' });
+      continue;
+    }
+    try {
+      const row = {
+        id: newId(),
+        name: name.trim(),
+        phone: wa.normalizePhone(phone),
+        city: city.trim(),
+        level: level.trim(),
+        active: true,
+        createdAt: now(),
+      };
+      added.push(await store.insert('referees', row));
+    } catch (err) {
+      skipped.push({ line: name, reason: err.message });
+    }
+  }
+  res.status(201).json({ added: added.length, skipped });
+});
+
 /* ------------------------- البطولات ------------------------- */
 router.get('/tournaments', async (req, res) => {
   const rows = await store.list('tournaments');
@@ -84,6 +119,29 @@ router.post('/tournaments', async (req, res) => {
     createdAt: now(),
   };
   res.status(201).json(await store.insert('tournaments', row));
+});
+
+router.post('/tournaments/import', async (req, res) => {
+  const rows = parseImportLines(req.body?.text);
+  const added = [];
+  const skipped = [];
+  for (const [name, city = '', venue = '', startDate = '', endDate = ''] of rows) {
+    if (!name) {
+      skipped.push({ line: '', reason: 'اسم البطولة ناقص' });
+      continue;
+    }
+    const row = {
+      id: newId(),
+      name: name.trim(),
+      city: city.trim(),
+      venue: venue.trim(),
+      startDate: startDate.trim(),
+      endDate: endDate.trim(),
+      createdAt: now(),
+    };
+    added.push(await store.insert('tournaments', row));
+  }
+  res.status(201).json({ added: added.length, skipped });
 });
 
 router.delete('/tournaments/:id', async (req, res) => {
@@ -123,6 +181,33 @@ router.post('/matches', async (req, res) => {
     createdAt: now(),
   };
   res.status(201).json(await store.insert('matches', row));
+});
+
+router.post('/matches/import', async (req, res) => {
+  const { tournamentId, text } = req.body || {};
+  if (!tournamentId) return bad(res, 'اختر البطولة قبل الاستيراد');
+  const rows = parseImportLines(text);
+  const added = [];
+  const skipped = [];
+  for (const [playerA, playerB, startTime = '', table = '', round = '', category = ''] of rows) {
+    if (!playerA || !playerB) {
+      skipped.push({ line: [playerA, playerB].join(','), reason: 'اللاعبان مطلوبان' });
+      continue;
+    }
+    const row = {
+      id: newId(),
+      tournamentId,
+      playerA: playerA.trim(),
+      playerB: playerB.trim(),
+      startTime: startTime.trim(),
+      table: table.trim(),
+      round: round.trim(),
+      category: category.trim(),
+      createdAt: now(),
+    };
+    added.push(await store.insert('matches', row));
+  }
+  res.status(201).json({ added: added.length, skipped });
 });
 
 router.delete('/matches/:id', async (req, res) => {

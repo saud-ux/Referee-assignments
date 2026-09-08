@@ -28,7 +28,10 @@
     <section class="panel">
       <div class="panel-head">
         <h2>البطولات</h2>
-        <button class="link" data-open="dlg-tournament">إضافة</button>
+        <div class="head-actions">
+          <button class="link" data-open="dlg-import-tournaments">استيراد</button>
+          <button class="link" data-open="dlg-tournament">إضافة</button>
+        </div>
       </div>
       <ul class="list" id="tournaments"></ul>
     </section>
@@ -36,7 +39,10 @@
     <section class="panel">
       <div class="panel-head">
         <h2>الحكّام</h2>
-        <button class="link" data-open="dlg-referee">إضافة</button>
+        <div class="head-actions">
+          <button class="link" data-open="dlg-import-referees">استيراد</button>
+          <button class="link" data-open="dlg-referee">إضافة</button>
+        </div>
       </div>
       <ul class="list" id="referees"></ul>
     </section>
@@ -52,7 +58,10 @@
 
     <div class="main-head">
       <h2 id="board-title">اختر بطولة للبدء</h2>
-      <button class="btn" id="btn-add-match" hidden data-open="dlg-match">إضافة مباراة</button>
+      <div class="head-actions">
+        <button class="btn ghost" id="btn-import-matches" hidden data-open="dlg-import-matches">استيراد مباريات</button>
+        <button class="btn" id="btn-add-match" hidden data-open="dlg-match">إضافة مباراة</button>
+      </div>
     </div>
 
     <div id="board"></div>
@@ -143,6 +152,66 @@
     <menu>
       <button value="cancel" class="btn ghost" formnovalidate>إلغاء</button>
       <button value="save" class="btn">إرسال التكليف</button>
+    </menu>
+  </form>
+</dialog>
+
+<!-- استيراد حكام -->
+<dialog id="dlg-import-referees">
+  <form method="dialog" class="form" data-form="import-referees">
+    <div class="form-head">
+      <h3>استيراد حكّام</h3>
+      <button type="button" class="dlg-close" data-close aria-label="إغلاق">×</button>
+    </div>
+    <p class="hint">كل سطر يمثل حكماً. الحقول مفصولة بفواصل بهذا الترتيب:<br>
+      <code>الاسم, الجوال, المدينة (اختياري), الدرجة (اختياري)</code>
+    </p>
+    <label>الصق البيانات
+      <textarea name="text" rows="8" required placeholder="محمد العلي, 0501234567, الرياض, دولي&#10;فهد الشمري, 0559876543, جدة, أول"></textarea>
+    </label>
+    <menu>
+      <button value="cancel" class="btn ghost" formnovalidate>إلغاء</button>
+      <button value="save" class="btn">استيراد</button>
+    </menu>
+  </form>
+</dialog>
+
+<!-- استيراد بطولات -->
+<dialog id="dlg-import-tournaments">
+  <form method="dialog" class="form" data-form="import-tournaments">
+    <div class="form-head">
+      <h3>استيراد بطولات</h3>
+      <button type="button" class="dlg-close" data-close aria-label="إغلاق">×</button>
+    </div>
+    <p class="hint">كل سطر يمثل بطولة. الترتيب:<br>
+      <code>الاسم, المدينة, الصالة, من (YYYY-MM-DD), إلى (YYYY-MM-DD)</code>
+    </p>
+    <label>الصق البيانات
+      <textarea name="text" rows="8" required placeholder="بطولة الأندية, الرياض, صالة الملز, 2026-10-01, 2026-10-05"></textarea>
+    </label>
+    <menu>
+      <button value="cancel" class="btn ghost" formnovalidate>إلغاء</button>
+      <button value="save" class="btn">استيراد</button>
+    </menu>
+  </form>
+</dialog>
+
+<!-- استيراد مباريات -->
+<dialog id="dlg-import-matches">
+  <form method="dialog" class="form" data-form="import-matches">
+    <div class="form-head">
+      <h3>استيراد مباريات</h3>
+      <button type="button" class="dlg-close" data-close aria-label="إغلاق">×</button>
+    </div>
+    <p class="hint">تُستورد للبطولة المختارة حالياً. الترتيب:<br>
+      <code>اللاعب الأول, اللاعب الثاني, الموعد (YYYY-MM-DDTHH:mm), الطاولة, الدور, الفئة</code>
+    </p>
+    <label>الصق البيانات
+      <textarea name="text" rows="8" required placeholder="سعود × خالد, 2026-10-01T18:00, 3, ربع النهائي, رجال"></textarea>
+    </label>
+    <menu>
+      <button value="cancel" class="btn ghost" formnovalidate>إلغاء</button>
+      <button value="save" class="btn">استيراد</button>
     </menu>
   </form>
 </dialog>
