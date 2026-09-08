@@ -1,9 +1,14 @@
 import express from 'express';
+import crypto from 'node:crypto';
 import { store, newId } from './store.js';
 import * as wa from './whatsapp.js';
 import * as scoreboard from './scoreboard.js';
+import * as page from './respond.js';
 
 export const router = express.Router();
+
+/** رمز سري غير قابل للتخمين يُستخدم في رابط رد الحكم */
+const newToken = () => crypto.randomBytes(24).toString('base64url');
 
 const now = () => new Date().toISOString();
 const bad = (res, msg, code = 400) => res.status(code).json({ error: msg });
@@ -446,6 +451,7 @@ router.post('/assignments', async (req, res) => {
     tournamentId: match.tournamentId,
     role,
     status: 'pending',
+    token: newToken(),
     createdAt: now(),
     sentAt: null,
     respondedAt: null,
@@ -492,6 +498,68 @@ router.post('/assignments/:id/mark', async (req, res) => {
     responseVia: 'يدوي',
   });
   row ? res.json(row) : bad(res, 'التكليف غير موجود', 404);
+});
+
+/* ------------------ صفحة رد الحكم عبر رابط خاص ------------------ */
+export const respondRoutes = express.Router();
+respondRoutes.use(express.urlencoded({ extended: false }));
+
+/** يجد التكليف من رمزه ويجمع بياناته الكاملة */
+async function loadByToken(token) {
+  if (!token) return null;
+  const all = await store.list('assignments', {});
+  const assignment = all.find((a) => a.token === token);
+  if (!assignment) return null;
+  const [referee, match, tournament] = await Promise.all([
+    store.get('referees', assignment.refereeId),
+    store.get('matches', assignment.matchId),
+    store.get('tournaments', assignment.tournamentId),
+  ]);
+  return { assignment, referee, match, tournament };
+}
+
+const DEAD_REASONS = {
+  cancelled: 'هذا التكليف أُلغي.',
+  expired: 'انتهت مهلة الرد على هذا التكليف.',
+  failed: 'هذا التكليف غير نشط.',
+};
+
+respondRoutes.get('/:token', async (req, res) => {
+  const data = await loadByToken(req.params.token);
+  if (!data) return res.status(404).send(page.deadPage('الرابط غير صحيح أو انتهت صلاحيته.'));
+
+  const { assignment, match } = data;
+  if (['accepted', 'declined'].includes(assignment.status)) {
+    return res.send(page.donePage({ status: assignment.status, match, alreadyAnswered: true }));
+  }
+  if (DEAD_REASONS[assignment.status]) {
+    return res.status(410).send(page.deadPage(DEAD_REASONS[assignment.status]));
+  }
+  res.send(page.askPage({ ...data, token: req.params.token }));
+});
+
+respondRoutes.post('/:token', async (req, res) => {
+  const data = await loadByToken(req.params.token);
+  if (!data) return res.status(404).send(page.deadPage('الرابط غير صحيح أو انتهت صلاحيته.'));
+
+  const { assignment, match } = data;
+  if (['accepted', 'declined'].includes(assignment.status)) {
+    return res.send(page.donePage({ status: assignment.status, match, alreadyAnswered: true }));
+  }
+  if (DEAD_REASONS[assignment.status]) {
+    return res.status(410).send(page.deadPage(DEAD_REASONS[assignment.status]));
+  }
+
+  const action = req.body?.action;
+  const status = action === 'accept' ? 'accepted' : action === 'decline' ? 'declined' : null;
+  if (!status) return res.status(400).send(page.deadPage('لم يُحدَّد الرد.'));
+
+  await store.update('assignments', assignment.id, {
+    status,
+    respondedAt: now(),
+    responseVia: 'رابط',
+  });
+  res.send(page.donePage({ status, match }));
 });
 
 /* ------------------------- ويبهوك واتساب ------------------------- */

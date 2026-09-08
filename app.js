@@ -88,6 +88,33 @@ const fmtTime = (iso) =>
 
 const refereeName = (id) => state.referees.find((r) => r.id === id)?.name || 'حكم محذوف';
 
+/** يبني رابط الرد ونص رسالة الواتساب لتكليف معيّن */
+function buildInvite(assignmentId) {
+  const a = state.assignments.find((x) => x.id === assignmentId);
+  if (!a?.token) return null;
+  const m = state.matches.find((x) => x.id === a.matchId);
+  const ref = state.referees.find((x) => x.id === a.refereeId);
+  const tour = state.tournaments.find((x) => x.id === a.tournamentId);
+  if (!m || !ref) return null;
+
+  const link = `${location.origin}/r/${a.token}`;
+  const teams = `${m.clubA || m.playerA || ''} × ${m.clubB || m.playerB || ''}`;
+
+  const lines = [
+    `السلام عليكم ${ref.name}`,
+    '',
+    'كُلِّفت بإدارة المباراة التالية:',
+    `🏓 ${teams}`,
+  ];
+  if (tour?.name) lines.push(`🏆 ${tour.name}`);
+  lines.push(`🕒 ${fmtTime(m.startTime)}`);
+  if (m.table) lines.push(`📍 طاولة ${m.table}`);
+  if (m.round) lines.push(`🔸 ${m.round}`);
+  lines.push('', 'للقبول أو الاعتذار، افتح الرابط:', link);
+
+  return { link, text: lines.join('\n'), phone: String(ref.phone).replace(/\D/g, '') };
+}
+
 function importMessage(kind, r) {
   const parts = [`استُورد ${r.added} ${kind}`];
   if (r.skipped?.length) parts.push(`تُخطّي ${r.skipped.length} سطر`);
@@ -483,7 +510,9 @@ function renderBoard() {
 
       const actions = a
         ? ['sent', 'pending'].includes(a.status)
-          ? `<button class="btn ghost small" data-mark="${a.id}" data-value="accepted">تسجيل قبول</button>
+          ? `${a.token ? `<button class="btn small" data-wa="${a.id}">إرسال واتساب</button>
+             <button class="btn ghost small" data-copy="${a.id}">نسخ الرابط</button>` : ''}
+             <button class="btn ghost small" data-mark="${a.id}" data-value="accepted">تسجيل قبول</button>
              <button class="btn danger small" data-mark="${a.id}" data-value="declined">تسجيل اعتذار</button>
              <button class="btn ghost small" data-cancel="${a.id}">إلغاء التكليف</button>`
           : `<button class="btn small" data-assign="${m.id}">تكليف حكم آخر</button>`
@@ -541,7 +570,7 @@ document.addEventListener('click', async (e) => {
     }
   }
 
-  const t = e.target.closest('[data-open], [data-tournament], [data-assign], [data-cancel], [data-mark], [data-del-tournament], [data-del-referee], [data-del-match], [data-edit-match]');
+  const t = e.target.closest('[data-open], [data-tournament], [data-assign], [data-cancel], [data-mark], [data-del-tournament], [data-del-referee], [data-del-match], [data-edit-match], [data-wa], [data-copy]');
   if (!t) return;
 
   try {
@@ -573,6 +602,24 @@ document.addEventListener('click', async (e) => {
       state.tournamentId = t.dataset.tournament;
       renderTournaments();
       return loadBoard();
+    }
+
+    if (t.dataset.wa) {
+      const built = buildInvite(t.dataset.wa);
+      if (!built) return toast('تعذّر بناء الرسالة');
+      window.open(
+        `https://wa.me/${built.phone}?text=${encodeURIComponent(built.text)}`,
+        '_blank',
+        'noopener'
+      );
+      return;
+    }
+
+    if (t.dataset.copy) {
+      const built = buildInvite(t.dataset.copy);
+      if (!built) return toast('تعذّر بناء الرابط');
+      await navigator.clipboard.writeText(built.link);
+      return toast('نُسخ الرابط');
     }
 
     if (t.dataset.editMatch) {

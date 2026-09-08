@@ -2,7 +2,7 @@ import express from 'express';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { initStore } from './store.js';
-import { router, webhook, sweepExpired } from './routes.js';
+import { router, webhook, respondRoutes, sweepExpired } from './routes.js';
 import { authRoutes, guard, isLocked } from './auth.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -24,6 +24,9 @@ app.use('/webhook', webhook);
 
 // نبض خارجي لإبقاء الخدمة مستيقظة على استضافات النوم التلقائي
 app.get('/health', (_req, res) => res.type('text').send('ok'));
+
+// صفحة رد الحكم — عامة، يحميها الرمز السري في الرابط وحده
+app.use('/r', respondRoutes);
 
 // صفحة الدخول ومسارات الجلسة
 app.use('/auth', authRoutes);
