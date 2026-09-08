@@ -45,7 +45,7 @@
         </div>
       </div>
       <div class="search-wrap">
-        <input type="search" id="ref-search" placeholder="ابحث باسم أو رقم…" />
+        <input type="search" id="ref-search" placeholder="ابحث بالاسم أو رقم الحكم أو الجوال…" />
       </div>
       <ul class="list" id="referees"></ul>
     </section>
@@ -104,10 +104,9 @@
       <h3>حكم جديد</h3>
       <button type="button" class="dlg-close" data-close aria-label="إغلاق">×</button>
     </div>
-    <label>الاسم <input name="name" required /></label>
-    <label>رقم الحكم <input name="refereeNumber" placeholder="مثل: 12" /></label>
+    <label>اسم الحكم <input name="name" required /></label>
+    <label>رقم الحكم <input name="refereeNumber" required placeholder="مثل: 12" /></label>
     <label>رقم الجوال <input name="phone" required inputmode="tel" placeholder="05xxxxxxxx" /></label>
-    <label>المدينة <input name="city" /></label>
     <menu>
       <button value="cancel" class="btn ghost" formnovalidate>إلغاء</button>
       <button value="save" class="btn">حفظ الحكم</button>
@@ -270,21 +269,19 @@
       <table class="tpl">
         <thead>
           <tr>
-            <th>الاسم</th>
+            <th>اسم الحكم</th>
             <th>رقم الحكم</th>
             <th>رقم الجوال</th>
-            <th>المدينة</th>
           </tr>
         </thead>
       </table>
     </div>
 
     <p class="hint">
-      الأعمدة الإجبارية:
-      <b>الاسم</b>
-      و
+      الأعمدة الثلاثة كلها مطلوبة:
+      <b>اسم الحكم</b>،
+      <b>رقم الحكم</b>،
       <b>رقم الجوال</b>.
-      الباقي اختياري.
     </p>
 
     <p><button type="button" class="link" id="btn-download-ref-tpl">⬇︎ تنزيل قالب Excel جاهز</button></p>
@@ -309,7 +306,7 @@
       <button type="button" class="dlg-close" data-close aria-label="إغلاق">×</button>
     </div>
     <p class="hint">كل سطر يمثل حكماً. الحقول مفصولة بفواصل بهذا الترتيب:<br>
-      <code>الاسم, رقم الحكم (اختياري), الجوال, المدينة (اختياري)</code>
+      <code>اسم الحكم, رقم الحكم, رقم الجوال</code>
     </p>
     <label>الصق البيانات
       <textarea name="text" rows="8" required></textarea>

@@ -91,14 +91,15 @@ router.get('/referees', async (req, res) => {
 });
 
 router.post('/referees', async (req, res) => {
-  const { name, phone, city = '', refereeNumber = '' } = req.body || {};
-  if (!name || !phone) return bad(res, 'الاسم ورقم الجوال مطلوبان');
+  const { name, phone, refereeNumber = '' } = req.body || {};
+  if (!name || !phone || !String(refereeNumber).trim()) {
+    return bad(res, 'الاسم ورقم الحكم ورقم الجوال جميعها مطلوبة');
+  }
   const row = {
     id: newId(),
     name: String(name).trim(),
     refereeNumber: String(refereeNumber).trim(),
     phone: wa.normalizePhone(phone),
-    city: String(city).trim(),
     active: true,
     createdAt: now(),
   };
@@ -107,7 +108,7 @@ router.post('/referees', async (req, res) => {
 
 router.patch('/referees/:id', async (req, res) => {
   const patch = {};
-  for (const k of ['name', 'city', 'active', 'refereeNumber']) {
+  for (const k of ['name', 'active', 'refereeNumber']) {
     if (k in (req.body || {})) patch[k] = String(req.body[k] ?? '').trim();
   }
   if (req.body?.phone) patch.phone = wa.normalizePhone(req.body.phone);
@@ -132,18 +133,17 @@ router.post('/referees/import', async (req, res) => {
   const rows = parseImportLines(req.body?.text);
   const added = [];
   const skipped = [];
-  for (const [name, refereeNumber = '', phone, city = ''] of rows) {
-    if (!name || !phone) {
-      skipped.push({ line: [name, phone].join(','), reason: 'الاسم أو الجوال ناقص' });
+  for (const [name, refereeNumber, phone] of rows) {
+    if (!name || !refereeNumber || !phone) {
+      skipped.push({ line: [name, refereeNumber, phone].join(','), reason: 'حقل ناقص' });
       continue;
     }
     try {
       const row = {
         id: newId(),
         name: name.trim(),
-        refereeNumber: refereeNumber.trim(),
+        refereeNumber: String(refereeNumber).trim(),
         phone: wa.normalizePhone(phone),
-        city: city.trim(),
         active: true,
         createdAt: now(),
       };

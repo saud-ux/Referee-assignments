@@ -129,7 +129,7 @@ function renderPicker() {
 
   const rows = q
     ? state.referees.filter((r) =>
-        [r.name, r.phone, r.city, r.refereeNumber].some((v) => String(v || '').toLowerCase().includes(q))
+        [r.name, r.phone, r.refereeNumber].some((v) => String(v || '').toLowerCase().includes(q))
       )
     : state.referees;
 
@@ -152,7 +152,7 @@ function renderPicker() {
       }" data-pick-ref="${r.id}">
         <span class="who">
           <span class="nm">${r.refereeNumber ? '<b>' + r.refereeNumber + '</b> — ' : ''}${r.name}</span>
-          <span class="meta">${[r.phone, r.city].filter(Boolean).join(' · ')}</span>
+          <span class="meta">${r.phone}</span>
         </span>
         ${tag}
       </button>`;
@@ -289,10 +289,9 @@ const MATCH_HEADERS = {
 };
 
 const REFEREE_HEADERS = {
-  name: ['الاسم', 'الحكم', 'name'],
+  name: ['اسم الحكم', 'الاسم', 'الحكم', 'name'],
   refereeNumber: ['رقم الحكم', 'الرقم', 'number', 'refereeNumber'],
   phone: ['رقم الجوال', 'الجوال', 'الهاتف', 'phone', 'mobile'],
-  city: ['المدينة', 'city'],
 };
 
 function mapHeader(cell, dict) {
@@ -325,7 +324,7 @@ function parseWorkbook(file, kind = 'match') {
         if (!rows.length) return resolve([]);
         const mapFn = kind === 'referee' ? refHeader : matchHeader;
         const headerRow = rows[0].map(mapFn);
-        const required = kind === 'referee' ? ['name', 'phone'] : ['clubA', 'clubB'];
+        const required = kind === 'referee' ? ['name', 'phone', 'refereeNumber'] : ['clubA', 'clubB'];
         const out = [];
         for (let i = 1; i < rows.length; i++) {
           const raw = rows[i];
@@ -393,7 +392,7 @@ async function handleRefFilePicked(file) {
         (r) => `<div class="sb-row">
           <div class="body">
             <div class="teams">${r.refereeNumber ? '<b>' + r.refereeNumber + '</b> — ' : ''}${r.name}</div>
-            <div class="meta">${[r.phone, r.city].filter(Boolean).join(' · ')}</div>
+            <div class="meta">${r.phone}</div>
           </div>
         </div>`
       )
@@ -551,34 +550,44 @@ function downloadRefereesTemplate() {
   if (typeof XLSX === 'undefined') return toast('مكتبة Excel لم تُحمَّل بعد');
   const wb = XLSX.utils.book_new();
 
-  const refs = XLSX.utils.aoa_to_sheet([['الاسم', 'رقم الحكم', 'رقم الجوال', 'المدينة']]);
-  refs['!cols'] = [{ wch: 24 }, { wch: 10 }, { wch: 15 }, { wch: 14 }];
+  const HEADERS = ['اسم الحكم', 'رقم الحكم', 'رقم الجوال'];
+  const COLS = [{ wch: 30 }, { wch: 12 }, { wch: 16 }];
+
+  // 1) ورقة التعبئة — عناوين فقط، جاهزة لـ 250 حكماً
+  const refs = XLSX.utils.aoa_to_sheet([HEADERS]);
+  refs['!cols'] = COLS;
   XLSX.utils.book_append_sheet(wb, refs, 'الحكّام');
 
+  // 2) أمثلة للاسترشاد
   const samples = XLSX.utils.aoa_to_sheet([
-    ['الاسم', 'رقم الحكم', 'رقم الجوال', 'المدينة'],
-    ['محمد العلي', '1', '0501234567', 'الرياض'],
-    ['فهد الشمري', '2', '0559876543', 'جدة'],
-    ['عبدالله القحطاني', '3', '0562345678', 'الدمام'],
+    HEADERS,
+    ['محمد العلي', '1', '0501234567'],
+    ['فهد الشمري', '2', '0559876543'],
+    ['عبدالله القحطاني', '3', '0562345678'],
   ]);
-  samples['!cols'] = refs['!cols'];
+  samples['!cols'] = COLS;
   XLSX.utils.book_append_sheet(wb, samples, 'أمثلة');
 
+  // 3) تعليمات مختصرة
   const guide = XLSX.utils.aoa_to_sheet([
     ['كيفية التعبئة'],
     [],
-    ['أدخل الحكّام في ورقة «الحكّام». ورقة «أمثلة» للاسترشاد فقط.'],
-    ['السطر الأول (العناوين) لا يُلمس. كل سطر بعده يمثل حكماً واحداً.'],
+    ['1) افتح ورقة «الحكّام» — العناوين مضبوطة، لا تغيّرها.'],
+    ['2) اكتب كل حكم في سطر جديد تحت العناوين.'],
+    ['3) الأعمدة الثلاثة كلها مطلوبة لكل سطر.'],
+    ['4) احفظ الملف، وارجع لصفحة استيراد الحكّام في اللوحة، وارفعه.'],
     [],
-    ['العمود', 'إجباري؟', 'الوصف'],
-    ['الاسم', 'نعم', 'الاسم الكامل للحكم'],
-    ['رقم الحكم', 'لا', 'الرقم التعريفي (مو رقم الجوال) — مفيد للبحث السريع'],
-    ['رقم الجوال', 'نعم', 'رقم الواتساب. يُقبل بصيغ متعددة: 05..، +9665..، 9665..'],
-    ['المدينة', 'لا', 'مدينة الحكم'],
+    ['العمود', 'الوصف', 'مثال'],
+    ['اسم الحكم', 'الاسم الكامل', 'محمد العلي'],
+    ['رقم الحكم', 'الرقم التعريفي عند الاتحاد', '1'],
+    ['رقم الجوال', 'رقم الواتساب. يُقبل بصيغ: 05.. / +9665.. / 9665..', '0501234567'],
     [],
-    ['البحث في القائمة يشتغل على الاسم أو رقم الحكم أو رقم الجوال.'],
+    ['ملاحظات:'],
+    ['• البحث في القائمة يشتغل على أي من الحقول الثلاثة.'],
+    ['• أي سطر تنقصه أعمدة أو رقم جوال خاطئ سيُتجاوز، ويُبلّغ الاستيراد بالعدد.'],
+    ['• ورقة «أمثلة» و«تعليمات» لا تُقرأ عند الاستيراد — الاستيراد يقرأ ورقة «الحكّام» فقط.'],
   ]);
-  guide['!cols'] = [{ wch: 14 }, { wch: 10 }, { wch: 55 }];
+  guide['!cols'] = [{ wch: 14 }, { wch: 50 }, { wch: 18 }];
   XLSX.utils.book_append_sheet(wb, guide, 'تعليمات');
 
   XLSX.writeFile(wb, 'قالب-الحكّام.xlsx');
@@ -639,7 +648,7 @@ function renderReferees() {
   const q = state.refQuery.trim().toLowerCase();
   const rows = q
     ? state.referees.filter((r) =>
-        [r.name, r.phone, r.city, r.refereeNumber].some((v) => String(v || '').toLowerCase().includes(q))
+        [r.name, r.phone, r.refereeNumber].some((v) => String(v || '').toLowerCase().includes(q))
       )
     : state.referees;
 
@@ -651,7 +660,7 @@ function renderReferees() {
     .map(
       (r) => `<li>
         <span class="pick">${r.refereeNumber ? '<b>' + r.refereeNumber + '</b> — ' : ''}${r.name}
-          <span class="sub">${r.phone}${r.city ? ' — ' + r.city : ''}</span>
+          <span class="sub">${r.phone}</span>
         </span>
         <button class="del" data-del-referee="${r.id}" title="حذف">×</button>
       </li>`
@@ -996,7 +1005,7 @@ document.addEventListener('submit', async (e) => {
         return;
       }
       const text = state.refFileRows
-        .map((r) => [r.name, r.refereeNumber, r.phone, r.city].join(','))
+        .map((r) => [r.name, r.refereeNumber, r.phone].join(','))
         .join('\n');
       const r = await api('/referees/import', { method: 'POST', body: { text } });
       await loadSidebar();
