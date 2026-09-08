@@ -563,8 +563,10 @@ function renderTournaments() {
 
 function renderReferees() {
   const ul = $('#referees');
+  const counter = $('#ref-count');
   if (!state.referees.length) {
     ul.innerHTML = '<li class="empty">أضف الحكّام لتتمكن من تكليفهم.</li>';
+    if (counter) counter.textContent = '';
     return;
   }
   const q = state.refQuery.trim().toLowerCase();
@@ -574,6 +576,12 @@ function renderReferees() {
       )
     : state.referees;
 
+  if (counter) {
+    counter.textContent = q
+      ? `${rows.length} من ${state.referees.length}`
+      : `${state.referees.length}`;
+  }
+
   if (!rows.length) {
     ul.innerHTML = `<li class="empty">لا نتائج لـ "${q}".</li>`;
     return;
@@ -581,7 +589,9 @@ function renderReferees() {
   ul.innerHTML = rows
     .map(
       (r) => `<li>
-        <span class="pick">${r.refereeNumber ? '<b>' + r.refereeNumber + '</b> — ' : ''}${r.name}
+        <span class="pick" title="${r.name} — ${r.phone}">
+          ${r.refereeNumber ? '<b>' + r.refereeNumber + '</b>' : ''}
+          <span class="nm">${r.name}</span>
           <span class="sub">${r.phone}</span>
         </span>
         <button class="del" data-del-referee="${r.id}" title="حذف">×</button>

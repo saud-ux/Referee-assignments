@@ -123,6 +123,54 @@ h1, h2, h3, .tally b {
 .list li.on { background: var(--table-soft); }
 .list li.on button.pick { font-weight: 600; }
 .list .sub { display: block; font-size: 12.5px; color: var(--muted); }
+
+/* قائمة الحكّام تحتاج تكون مضغوطة لأن العدد يوصل مئات */
+#referees {
+  max-height: 420px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+#referees li {
+  padding: 6px 12px;
+  gap: 6px;
+  min-height: 0;
+}
+#referees .pick {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 14px;
+}
+#referees .pick b {
+  color: var(--table);
+  background: var(--table-soft);
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 700;
+  flex-shrink: 0;
+  min-width: 26px;
+  text-align: center;
+}
+#referees .pick .nm {
+  flex-shrink: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+#referees .pick .sub {
+  font-family: ui-monospace, monospace;
+  font-size: 12px;
+  direction: ltr;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-inline-start: auto;
+}
 .list .del {
   border: 0; background: none; color: var(--muted); cursor: pointer;
   font-size: 17px; line-height: 1; padding: 2px 6px; border-radius: 6px;
@@ -130,16 +178,33 @@ h1, h2, h3, .tally b {
 .list .del:hover { color: var(--red); background: var(--ball-soft); }
 .empty { padding: 16px 14px; color: var(--muted); font-size: 13.5px; }
 
-.search-wrap { padding: 8px 10px; border-bottom: 1px solid var(--line); }
+.search-wrap {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
 .search-wrap input {
   font: inherit;
   font-size: 14px;
-  width: 100%;
+  flex: 1;
   padding: 7px 10px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: #fbfcfc;
   color: var(--ink);
+  min-width: 0;
+}
+.counter {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  background: #eef1f0;
+  padding: 3px 9px;
+  border-radius: 999px;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 /* ---------- العدّاد ---------- */
