@@ -164,16 +164,18 @@ router.get('/matches', async (req, res) => {
 });
 
 router.post('/matches', async (req, res) => {
-  const { tournamentId, playerA, playerB, startTime, table = '', round = '', category = '' } =
-    req.body || {};
-  if (!tournamentId || !playerA || !playerB) {
-    return bad(res, 'البطولة واسما اللاعبين مطلوبة');
+  const body = req.body || {};
+  const clubA = body.clubA ?? body.playerA;
+  const clubB = body.clubB ?? body.playerB;
+  const { tournamentId, startTime, table = '', round = '', category = '' } = body;
+  if (!tournamentId || !clubA || !clubB) {
+    return bad(res, 'البطولة والناديان مطلوبان');
   }
   const row = {
     id: newId(),
     tournamentId,
-    playerA: String(playerA).trim(),
-    playerB: String(playerB).trim(),
+    clubA: String(clubA).trim(),
+    clubB: String(clubB).trim(),
     startTime: startTime || '',
     table: String(table).trim(),
     round: String(round).trim(),
@@ -189,16 +191,16 @@ router.post('/matches/import', async (req, res) => {
   const rows = parseImportLines(text);
   const added = [];
   const skipped = [];
-  for (const [playerA, playerB, startTime = '', table = '', round = '', category = ''] of rows) {
-    if (!playerA || !playerB) {
-      skipped.push({ line: [playerA, playerB].join(','), reason: 'اللاعبان مطلوبان' });
+  for (const [clubA, clubB, startTime = '', table = '', round = '', category = ''] of rows) {
+    if (!clubA || !clubB) {
+      skipped.push({ line: [clubA, clubB].join(','), reason: 'الناديان مطلوبان' });
       continue;
     }
     const row = {
       id: newId(),
       tournamentId,
-      playerA: playerA.trim(),
-      playerB: playerB.trim(),
+      clubA: clubA.trim(),
+      clubB: clubB.trim(),
       startTime: startTime.trim(),
       table: table.trim(),
       round: round.trim(),
@@ -241,7 +243,7 @@ async function buildParams(assignment) {
     params: [
       referee?.name || 'الحكم',
       tournament?.name || 'البطولة',
-      `${match?.playerA || '—'} × ${match?.playerB || '—'}`,
+      `${match?.clubA || match?.playerA || '—'} × ${match?.clubB || match?.playerB || '—'}`,
       fmtDateTime(match?.startTime),
       tournament?.venue || tournament?.city || '—',
       match?.table || '—',
@@ -371,7 +373,7 @@ webhook.post('/', async (req, res) => {
 
       // تأكيد للحكم — مجاني لأنه داخل نافذة الـ24 ساعة
       const { referee, match } = await buildParams(assignment);
-      const line = `${match?.playerA || ''} × ${match?.playerB || ''}`;
+      const line = `${match?.clubA || match?.playerA || ''} × ${match?.clubB || match?.playerB || ''}`;
       await wa.sendText(
         referee.phone,
         status === 'accepted'

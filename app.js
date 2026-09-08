@@ -208,7 +208,7 @@ function renderBoard() {
 
       return `<article class="match" data-state="${st}">
         <div>
-          <div class="players">${m.playerA} × ${m.playerB}</div>
+          <div class="players">${m.clubA || m.playerA || ''} × ${m.clubB || m.playerB || ''}</div>
           <div class="facts">${facts}</div>
           ${status}
         </div>
@@ -279,7 +279,8 @@ document.addEventListener('click', async (e) => {
       if (!state.referees.length) return toast('أضف حكّاماً أولاً');
       state.assignMatchId = t.dataset.assign;
       const m = state.matches.find((x) => x.id === state.assignMatchId);
-      $('#assign-match').textContent = `${m.playerA} × ${m.playerB} — ${fmtTime(m.startTime)}`;
+      const teams = `${m.clubA || m.playerA || ''} × ${m.clubB || m.playerB || ''}`;
+      $('#assign-match').textContent = `${teams} — ${fmtTime(m.startTime)}`;
       $('#assign-select').innerHTML = state.referees
         .map((r) => `<option value="${r.id}">${r.name} — ${r.phone}</option>`)
         .join('');
