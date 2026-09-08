@@ -499,6 +499,73 @@ router.post('/assignments/:id/mark', async (req, res) => {
   row ? res.json(row) : bad(res, 'التكليف غير موجود', 404);
 });
 
+/* ------------------ تعبئة بيانات الموسم ------------------ */
+router.get('/seed/preview', async (_req, res) => {
+  const { TOURNAMENTS, MATCHES, MATCHES_TOURNAMENT } = await import('./season-data.js');
+  const haveT = new Set((await store.list('tournaments')).map((t) => t.name));
+  const target = (await store.list('tournaments')).find((t) => t.name === MATCHES_TOURNAMENT);
+  const haveM = target
+    ? new Set(
+        (await store.list('matches', { tournamentId: target.id })).map(
+          (m) => `${m.clubA}|${m.clubB}|${m.startTime}`
+        )
+      )
+    : new Set();
+
+  res.json({
+    tournaments: {
+      total: TOURNAMENTS.length,
+      newOnes: TOURNAMENTS.filter((t) => !haveT.has(t.name)).length,
+    },
+    matches: {
+      total: MATCHES.length,
+      newOnes: MATCHES.filter((m) => !haveM.has(`${m.clubA}|${m.clubB}|${m.startTime}`)).length,
+      tournament: MATCHES_TOURNAMENT,
+    },
+  });
+});
+
+router.post('/seed', async (_req, res) => {
+  const { TOURNAMENTS, MATCHES, MATCHES_TOURNAMENT } = await import('./season-data.js');
+
+  // البطولات — نتخطى ما اسمه موجود
+  const existing = await store.list('tournaments');
+  const haveT = new Map(existing.map((t) => [t.name, t]));
+  let addedT = 0;
+  for (const t of TOURNAMENTS) {
+    if (haveT.has(t.name)) continue;
+    const row = { id: newId(), ...t, source: 'موسم 2026/2027', createdAt: now() };
+    await store.insert('tournaments', row);
+    haveT.set(t.name, row);
+    addedT++;
+  }
+
+  // المباريات — تُسنَد لبطولة التجمع الأول
+  const target = haveT.get(MATCHES_TOURNAMENT);
+  if (!target) return bad(res, 'تعذّر إيجاد بطولة المباريات', 500);
+
+  const haveM = new Set(
+    (await store.list('matches', { tournamentId: target.id })).map(
+      (m) => `${m.clubA}|${m.clubB}|${m.startTime}`
+    )
+  );
+  let addedM = 0;
+  for (const m of MATCHES) {
+    const key = `${m.clubA}|${m.clubB}|${m.startTime}`;
+    if (haveM.has(key)) continue;
+    await store.insert('matches', {
+      id: newId(),
+      tournamentId: target.id,
+      ...m,
+      createdAt: now(),
+    });
+    haveM.add(key);
+    addedM++;
+  }
+
+  res.status(201).json({ addedTournaments: addedT, addedMatches: addedM, tournamentId: target.id });
+});
+
 /* ------------------ صفحة رد الحكم عبر رابط خاص ------------------ */
 export const respondRoutes = express.Router();
 respondRoutes.use(express.urlencoded({ extended: false }));
