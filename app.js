@@ -146,9 +146,10 @@ function buildInvite(assignmentId) {
   if (place) lines.push(`📍 ${place}`);
   lines.push(
     '',
-    'يُحدَّد تكليفك اليومي في التجمع.',
-    'لتأكيد توفّرك أو الاعتذار، افتح الرابط:',
-    link
+    'نأمل تأكيد المشاركة في تحكيم البطولة من عدمها من خلال الرابط',
+    link,
+    '',
+    'شاكرين تعاونكم والتزامكم'
   );
 
   return { link, text: lines.join('\n'), phone: String(ref.phone).replace(/\D/g, '') };
