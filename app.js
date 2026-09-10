@@ -6,6 +6,7 @@ const state = {
   referees: [],
   assignments: [],
   tournamentId: null,
+  editRefereeId: null,
   refQuery: '',
   availQuery: '',
   availStatus: 'الكل',
@@ -473,6 +474,7 @@ function renderReferees() {
           <span class="nm">${r.name}</span>
           <span class="sub">${r.phone}</span>
         </span>
+        <button class="edit" data-edit-referee="${r.id}" title="تعديل">✎</button>
         <button class="del" data-del-referee="${r.id}" title="حذف">×</button>
       </li>`
     )
@@ -650,7 +652,7 @@ document.addEventListener('click', async (e) => {
     }
   }
 
-  const t = e.target.closest('[data-open], [data-tournament], [data-nominate], [data-cancel], [data-mark], [data-del-tournament], [data-del-referee], [data-wa], [data-copy]');
+  const t = e.target.closest('[data-open], [data-tournament], [data-nominate], [data-cancel], [data-mark], [data-del-tournament], [data-del-referee], [data-edit-referee], [data-wa], [data-copy]');
   if (!t) return;
 
   try {
@@ -726,6 +728,17 @@ document.addEventListener('click', async (e) => {
       return loadBoard();
     }
 
+    if (t.dataset.editReferee) {
+      const r = state.referees.find((x) => x.id === t.dataset.editReferee);
+      if (!r) return;
+      state.editRefereeId = r.id;
+      const f = document.querySelector('[data-form="edit-referee"]');
+      f.name.value = r.name || '';
+      f.refereeNumber.value = r.refereeNumber || '';
+      f.phone.value = r.phone || '';
+      return openDialog('dlg-edit-referee');
+    }
+
     if (t.dataset.delReferee) {
       if (!confirm('حذف الحكم؟')) return;
       await api(`/referees/${t.dataset.delReferee}`, { method: 'DELETE' });
@@ -767,6 +780,13 @@ document.addEventListener('submit', async (e) => {
       await loadSidebar();
       renderBoard();
       toast('أُضيف الحكم');
+    }
+    if (kind === 'edit-referee') {
+      if (!state.editRefereeId) return toast('لم يُحدَّد الحكم');
+      await api(`/referees/${state.editRefereeId}`, { method: 'PATCH', body });
+      await loadSidebar();
+      renderBoard();
+      toast('حُفظ التعديل');
     }
     if (kind === 'import-referees') {
       const r = await api('/referees/import', { method: 'POST', body: { text: body.text } });

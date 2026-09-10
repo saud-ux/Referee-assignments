@@ -152,6 +152,23 @@
   </form>
 </dialog>
 
+<!-- تعديل حكم -->
+<dialog id="dlg-edit-referee">
+  <form method="dialog" class="form" data-form="edit-referee">
+    <div class="form-head">
+      <h3>تعديل بيانات الحكم</h3>
+      <button type="button" class="dlg-close" data-close aria-label="إغلاق">×</button>
+    </div>
+    <label>اسم الحكم <input name="name" required /></label>
+    <label>رقم الحكم <input name="refereeNumber" required placeholder="مثل: 12" /></label>
+    <label>رقم الجوال <input name="phone" required inputmode="tel" placeholder="05xxxxxxxx" /></label>
+    <menu>
+      <button value="cancel" class="btn ghost" formnovalidate>إلغاء</button>
+      <button value="save" class="btn">حفظ التعديل</button>
+    </menu>
+  </form>
+</dialog>
+
 <!-- استيراد بطولات من السكوربورد -->
 <dialog id="dlg-sb-tournaments">
   <form method="dialog" class="form" data-form="sb-tournaments">

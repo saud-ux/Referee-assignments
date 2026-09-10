@@ -210,6 +210,11 @@ summary.panel-head::-webkit-details-marker { display: none; }
   font-size: 17px; line-height: 1; padding: 2px 6px; border-radius: 6px;
 }
 .list .del:hover { color: var(--red); background: var(--ball-soft); }
+.list .edit {
+  border: 0; background: none; color: var(--muted); cursor: pointer;
+  font-size: 14px; line-height: 1; padding: 2px 6px; border-radius: 6px;
+}
+.list .edit:hover { color: var(--table); background: var(--table-soft); }
 .empty { padding: 16px 14px; color: var(--muted); font-size: 13.5px; }
 
 .search-wrap {
