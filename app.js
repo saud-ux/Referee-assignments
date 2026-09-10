@@ -7,6 +7,7 @@ const state = {
   assignments: [],
   tournamentId: null,
   editRefereeId: null,
+  editTournamentId: null,
   refQuery: '',
   availQuery: '',
   availStatus: 'الكل',
@@ -435,6 +436,7 @@ function renderTournaments() {
         <button class="pick" data-tournament="${t.id}">${t.name}
           <span class="sub">${[t.city, t.venue].filter(Boolean).join(' — ') || 'بلا موقع'}</span>
         </button>
+        <button class="edit" data-edit-tournament="${t.id}" title="تعديل">✎</button>
         <button class="del" data-del-tournament="${t.id}" title="حذف">×</button>
       </li>`
     )
@@ -652,7 +654,7 @@ document.addEventListener('click', async (e) => {
     }
   }
 
-  const t = e.target.closest('[data-open], [data-tournament], [data-nominate], [data-cancel], [data-mark], [data-del-tournament], [data-del-referee], [data-edit-referee], [data-wa], [data-copy]');
+  const t = e.target.closest('[data-open], [data-tournament], [data-nominate], [data-cancel], [data-mark], [data-del-tournament], [data-edit-tournament], [data-del-referee], [data-edit-referee], [data-wa], [data-copy]');
   if (!t) return;
 
   try {
@@ -720,6 +722,19 @@ document.addEventListener('click', async (e) => {
       return loadBoard();
     }
 
+    if (t.dataset.editTournament) {
+      const tr = state.tournaments.find((x) => x.id === t.dataset.editTournament);
+      if (!tr) return;
+      state.editTournamentId = tr.id;
+      const f = document.querySelector('[data-form="edit-tournament"]');
+      f.name.value = tr.name || '';
+      f.city.value = tr.city || '';
+      f.venue.value = tr.venue || '';
+      f.startDate.value = (tr.startDate || '').slice(0, 10);
+      f.endDate.value = (tr.endDate || '').slice(0, 10);
+      return openDialog('dlg-edit-tournament');
+    }
+
     if (t.dataset.delTournament) {
       if (!confirm('حذف البطولة وكل تكاليفها؟')) return;
       await api(`/tournaments/${t.dataset.delTournament}`, { method: 'DELETE' });
@@ -764,6 +779,13 @@ document.addEventListener('submit', async (e) => {
       await api('/tournaments', { method: 'POST', body });
       await loadSidebar();
       toast('أُضيفت البطولة');
+    }
+    if (kind === 'edit-tournament') {
+      if (!state.editTournamentId) return toast('لم تُحدَّد البطولة');
+      await api(`/tournaments/${state.editTournamentId}`, { method: 'PATCH', body });
+      await loadSidebar();
+      renderBoard();
+      toast('حُفظ التعديل');
     }
     if (kind === 'tournament-group') {
       if (!state.tournamentId) return toast('اختر بطولة أولاً');

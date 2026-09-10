@@ -152,6 +152,29 @@
   </form>
 </dialog>
 
+<!-- تعديل بطولة -->
+<dialog id="dlg-edit-tournament">
+  <form method="dialog" class="form" data-form="edit-tournament">
+    <div class="form-head">
+      <h3>تعديل بيانات البطولة</h3>
+      <button type="button" class="dlg-close" data-close aria-label="إغلاق">×</button>
+    </div>
+    <label>اسم البطولة <input name="name" required /></label>
+    <div class="row">
+      <label>المدينة <input name="city" /></label>
+      <label>الصالة <input name="venue" /></label>
+    </div>
+    <div class="row">
+      <label>من <input name="startDate" type="date" /></label>
+      <label>إلى <input name="endDate" type="date" /></label>
+    </div>
+    <menu>
+      <button value="cancel" class="btn ghost" formnovalidate>إلغاء</button>
+      <button value="save" class="btn">حفظ التعديل</button>
+    </menu>
+  </form>
+</dialog>
+
 <!-- تعديل حكم -->
 <dialog id="dlg-edit-referee">
   <form method="dialog" class="form" data-form="edit-referee">
