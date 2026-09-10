@@ -164,8 +164,14 @@ router.get('/tournaments', async (req, res) => {
   res.json(rows);
 });
 
+/** يقبل فقط روابط http/https، وإلا يعيد نصاً فارغاً */
+const safeUrl = (u) => {
+  const s = String(u || '').trim();
+  return /^https?:\/\//i.test(s) ? s : '';
+};
+
 router.post('/tournaments', async (req, res) => {
-  const { name, city = '', venue = '', startDate = '', endDate = '' } = req.body || {};
+  const { name, city = '', venue = '', startDate = '', endDate = '', groupLink = '' } = req.body || {};
   if (!name) return bad(res, 'اسم البطولة مطلوب');
   const row = {
     id: newId(),
@@ -174,9 +180,22 @@ router.post('/tournaments', async (req, res) => {
     venue: String(venue).trim(),
     startDate,
     endDate,
+    groupLink: safeUrl(groupLink),
     createdAt: now(),
   };
   res.status(201).json(await store.insert('tournaments', row));
+});
+
+router.patch('/tournaments/:id', async (req, res) => {
+  const patch = {};
+  for (const k of ['name', 'city', 'venue', 'startDate', 'endDate']) {
+    if (k in (req.body || {})) patch[k] = String(req.body[k] ?? '').trim();
+  }
+  if ('groupLink' in (req.body || {})) patch.groupLink = safeUrl(req.body.groupLink);
+  if ('name' in patch && !patch.name) return bad(res, 'اسم البطولة مطلوب');
+  if (!Object.keys(patch).length) return bad(res, 'لا يوجد ما يُحدَّث');
+  const row = await store.update('tournaments', req.params.id, patch);
+  row ? res.json(row) : bad(res, 'البطولة غير موجودة', 404);
 });
 
 router.post('/tournaments/import', async (req, res) => {

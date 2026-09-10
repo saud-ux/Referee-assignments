@@ -70,6 +70,7 @@
       <h2 id="board-title">اختر بطولة للبدء</h2>
       <div class="head-actions">
         <button class="btn" id="btn-nominate-all" hidden>تكليف الكل</button>
+        <button class="btn ghost" id="btn-group-link" hidden>رابط القروب</button>
         <button class="btn ghost" id="btn-export" hidden>تصدير الكشف</button>
       </div>
     </div>
@@ -106,9 +107,30 @@
       <label>من <input name="startDate" type="date" /></label>
       <label>إلى <input name="endDate" type="date" /></label>
     </div>
+    <label>رابط قروب واتساب (اختياري)
+      <input name="groupLink" type="url" inputmode="url" placeholder="https://chat.whatsapp.com/..." />
+    </label>
     <menu>
       <button value="cancel" class="btn ghost" formnovalidate>إلغاء</button>
       <button value="save" class="btn">حفظ البطولة</button>
+    </menu>
+  </form>
+</dialog>
+
+<!-- تعديل رابط قروب البطولة -->
+<dialog id="dlg-tournament-group">
+  <form method="dialog" class="form" data-form="tournament-group">
+    <div class="form-head">
+      <h3>رابط قروب البطولة</h3>
+      <button type="button" class="dlg-close" data-close aria-label="إغلاق">×</button>
+    </div>
+    <p class="hint">يُرسَل هذا الرابط للحكم في صفحة الرد عند قبوله التكليف، ليضمّه لقروب واتساب الخاص بالبطولة.</p>
+    <label>رابط قروب واتساب
+      <input name="groupLink" type="url" inputmode="url" placeholder="https://chat.whatsapp.com/..." />
+    </label>
+    <menu>
+      <button value="cancel" class="btn ghost" formnovalidate>إلغاء</button>
+      <button value="save" class="btn">حفظ الرابط</button>
     </menu>
   </form>
 </dialog>

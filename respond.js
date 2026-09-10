@@ -68,6 +68,14 @@ const SHELL = (title, body) => `<!DOCTYPE html>
   .badge.ok { background: var(--table-soft); color: var(--table); }
   .badge.no { background: #fbe9e0; color: var(--red); }
   .badge.dead { background: #eef1f0; color: var(--muted); }
+  .join {
+    display: block; margin: 18px 0 0;
+    padding: 14px; border-radius: 10px;
+    background: #1faa59; color: #fff;
+    font-size: 17px; font-weight: 600;
+    text-decoration: none;
+  }
+  .join::before { content: "💬  "; }
 </style>
 </head>
 <body><div class="card">${body}</div></body>
@@ -120,9 +128,18 @@ export function askPage({ referee, tournament, token }) {
   );
 }
 
+const safeUrl = (u) => {
+  const s = String(u || '').trim();
+  return /^https?:\/\//i.test(s) ? s : '';
+};
+
 /** صفحة التأكيد — بعد أن يرد الحكم، أو إذا كان قد ردّ سابقاً */
 export function donePage({ status, tournament, alreadyAnswered = false }) {
   const accepted = status === 'accepted';
+  const groupLink = accepted ? safeUrl(tournament?.groupLink) : '';
+  const groupBtn = groupLink
+    ? `<a class="join" href="${esc(groupLink)}" target="_blank" rel="noopener">انضم لقروب البطولة</a>`
+    : '';
   return SHELL(
     accepted ? 'تم تأكيد التوفّر' : 'تم تسجيل الاعتذار',
     `<h1>${accepted ? 'شكراً لك' : 'تم التسجيل'}</h1>
@@ -133,7 +150,8 @@ export function donePage({ status, tournament, alreadyAnswered = false }) {
      <p class="note">
        ${alreadyAnswered ? 'سبق أن سجّلت ردّك على هذا الترشيح.' : 'وصل ردّك للجنة التحكيم.'}
        ${accepted ? '<br>سيصلك التكليف اليومي في التجمع.' : ''}
-     </p>`
+     </p>
+     ${groupBtn}`
   );
 }
 

@@ -189,7 +189,16 @@ document.addEventListener('click', (e) => {
   if (e.target.id === 'btn-download-t-tpl') downloadTournamentsTemplate();
   if (e.target.id === 'btn-export') exportAvailability();
   if (e.target.id === 'btn-nominate-all') nominateAll();
+  if (e.target.id === 'btn-group-link') openGroupLinkDialog();
 });
+
+function openGroupLinkDialog() {
+  const tour = state.tournaments.find((t) => t.id === state.tournamentId);
+  if (!tour) return toast('اختر بطولة أولاً');
+  const f = document.querySelector('[data-form="tournament-group"]');
+  if (f) f.groupLink.value = tour.groupLink || '';
+  openDialog('dlg-tournament-group');
+}
 
 // ضغط زر داخل <summary> يبقى يشغّل الزر بدون فتح/قفل القائمة
 document.addEventListener('click', (e) => {
@@ -528,6 +537,9 @@ function renderBoard() {
 
   $('#btn-nominate-all').hidden = !tournament || !state.referees.length;
   $('#btn-export').hidden = !tournament;
+  const glBtn = $('#btn-group-link');
+  glBtn.hidden = !tournament;
+  if (tournament) glBtn.textContent = tournament.groupLink ? 'رابط القروب ✓' : 'رابط القروب';
   $('#board-toolbar').hidden = !tournament || !state.referees.length;
   $('#tally').hidden = !tournament;
   $('#board-title').textContent = tournament
@@ -739,6 +751,16 @@ document.addEventListener('submit', async (e) => {
       await api('/tournaments', { method: 'POST', body });
       await loadSidebar();
       toast('أُضيفت البطولة');
+    }
+    if (kind === 'tournament-group') {
+      if (!state.tournamentId) return toast('اختر بطولة أولاً');
+      await api(`/tournaments/${state.tournamentId}`, {
+        method: 'PATCH',
+        body: { groupLink: body.groupLink || '' },
+      });
+      await loadSidebar();
+      renderBoard();
+      toast(body.groupLink ? 'حُفظ رابط القروب' : 'أُزيل رابط القروب');
     }
     if (kind === 'referee') {
       await api('/referees', { method: 'POST', body });
