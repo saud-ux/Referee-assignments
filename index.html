@@ -15,7 +15,7 @@
 <header class="bar">
   <div class="bar-title">
     <h1>مكتب التكليفات</h1>
-    <p>تكليف حكام تنس الطاولة ومتابعة ردودهم</p>
+    <p>ترشيح حكام تنس الطاولة للبطولات ومتابعة توفّرهم</p>
   </div>
 </header>
 
@@ -60,32 +60,29 @@
 
   <section class="main">
     <div class="tally" id="tally" hidden>
-      <div class="tally-item" data-state="accepted"><b id="n-accepted">0</b><span>قبلوا</span></div>
+      <div class="tally-item" data-state="accepted"><b id="n-accepted">0</b><span>متوفّرون</span></div>
       <div class="tally-item" data-state="sent"><b id="n-sent">0</b><span>بانتظار الرد</span></div>
       <div class="tally-item" data-state="declined"><b id="n-declined">0</b><span>اعتذروا</span></div>
-      <div class="tally-item" data-state="empty"><b id="n-empty">0</b><span>بلا حكم</span></div>
+      <div class="tally-item" data-state="empty"><b id="n-empty">0</b><span>لم يُرسل</span></div>
     </div>
 
     <div class="main-head">
       <h2 id="board-title">اختر بطولة للبدء</h2>
       <div class="head-actions">
-        <button class="btn" id="btn-sb-import" hidden data-open="dlg-sb-import">استيراد</button>
-        <button class="btn ghost" id="btn-file-import" hidden data-open="dlg-match-file">من ملف Excel</button>
-        <button class="btn ghost" id="btn-add-match" hidden data-open="dlg-match">إضافة يدوية</button>
+        <button class="btn" id="btn-nominate-all" hidden>نداء توفّر للكل</button>
         <button class="btn ghost" id="btn-export" hidden>تصدير الكشف</button>
       </div>
     </div>
 
     <div id="board-toolbar" class="board-toolbar" hidden>
-      <div class="fchips" id="board-cats"></div>
       <div class="fchips">
         <button class="schip on" data-mst="الكل">الكل</button>
-        <button class="schip" data-mst="empty">بلا حكم</button>
+        <button class="schip" data-mst="empty">لم يُرسل</button>
         <button class="schip" data-mst="sent">بانتظار</button>
-        <button class="schip" data-mst="accepted">قبل</button>
+        <button class="schip" data-mst="accepted">متوفّر</button>
         <button class="schip" data-mst="declined">اعتذر</button>
       </div>
-      <input type="search" id="match-search" placeholder="ابحث باسم النادي…" />
+      <input type="search" id="avail-search" placeholder="ابحث باسم الحكم أو رقمه…" />
     </div>
 
     <div id="board"></div>
@@ -133,72 +130,6 @@
   </form>
 </dialog>
 
-<!-- إضافة مباراة -->
-<dialog id="dlg-match">
-  <form method="dialog" class="form" data-form="match">
-    <div class="form-head">
-      <h3>مباراة جديدة</h3>
-      <button type="button" class="dlg-close" data-close aria-label="إغلاق">×</button>
-    </div>
-    <div class="row">
-      <label>النادي الأول <input name="clubA" required /></label>
-      <label>النادي الثاني <input name="clubB" required /></label>
-    </div>
-    <label>الموعد <input name="startTime" type="datetime-local" /></label>
-    <div class="row">
-      <label>الدور <input name="round" placeholder="ربع النهائي" /></label>
-      <label>الفئة <input name="category" placeholder="رجال" /></label>
-    </div>
-    <menu>
-      <button value="cancel" class="btn ghost" formnovalidate>إلغاء</button>
-      <button value="save" class="btn">حفظ المباراة</button>
-    </menu>
-  </form>
-</dialog>
-
-<!-- تعديل مباراة -->
-<dialog id="dlg-edit-match">
-  <form method="dialog" class="form" data-form="edit-match">
-    <div class="form-head">
-      <h3>تعديل المباراة</h3>
-      <button type="button" class="dlg-close" data-close aria-label="إغلاق">×</button>
-    </div>
-    <div class="row">
-      <label>النادي الأول <input name="clubA" required /></label>
-      <label>النادي الثاني <input name="clubB" required /></label>
-    </div>
-    <label>الموعد <input name="startTime" type="datetime-local" /></label>
-    <div class="row">
-      <label>الدور <input name="round" /></label>
-      <label>الفئة <input name="category" /></label>
-    </div>
-    <menu>
-      <button value="cancel" class="btn ghost" formnovalidate>إلغاء</button>
-      <button value="save" class="btn">حفظ التعديل</button>
-    </menu>
-  </form>
-</dialog>
-
-<!-- اختيار حكم -->
-<dialog id="dlg-assign">
-  <form method="dialog" class="form" data-form="assign">
-    <div class="form-head">
-      <h3>تكليف حكم</h3>
-      <button type="button" class="dlg-close" data-close aria-label="إغلاق">×</button>
-    </div>
-    <p class="hint" id="assign-match"></p>
-    <input type="hidden" name="refereeId" id="assign-value" />
-    <label>ابحث عن الحكم
-      <input type="search" id="assign-search" placeholder="اكتب اسماً أو رقماً…" autocomplete="off" />
-    </label>
-    <div id="assign-list" class="picker"></div>
-    <menu>
-      <button value="cancel" class="btn ghost" formnovalidate>إلغاء</button>
-      <button value="save" class="btn">إرسال التكليف</button>
-    </menu>
-  </form>
-</dialog>
-
 <!-- استيراد بطولات من السكوربورد -->
 <dialog id="dlg-sb-tournaments">
   <form method="dialog" class="form" data-form="sb-tournaments">
@@ -215,27 +146,6 @@
       <button type="button" class="btn ghost" id="sb-tournaments-refresh">تحديث</button>
       <button value="cancel" class="btn ghost" formnovalidate>إلغاء</button>
       <button value="save" class="btn">إنشاء المحدّد</button>
-    </menu>
-  </form>
-</dialog>
-
-<!-- استيراد مباريات من السكوربورد -->
-<dialog id="dlg-sb-import">
-  <form method="dialog" class="form" data-form="sb-import">
-    <div class="form-head">
-      <h3>استيراد من السكوربورد</h3>
-      <button type="button" class="dlg-close" data-close aria-label="إغلاق">×</button>
-    </div>
-    <p class="hint">
-      يُقرأ من قاعدة السكوربورد مباشرة (قراءة فقط).<br>
-      البطولة المستهدفة: <b id="sb-target-name">—</b><br>
-      المباريات المُستوردة سابقاً لا تتكرر. المواعيد تُدخل يدويّاً بعد الاستيراد.
-    </p>
-    <div id="sb-list" class="sb-list"><p class="empty">جارٍ الجلب…</p></div>
-    <menu>
-      <button type="button" class="btn ghost" id="sb-refresh">تحديث القائمة</button>
-      <button value="cancel" class="btn ghost" formnovalidate>إلغاء</button>
-      <button value="save" class="btn" id="sb-submit">استيراد المحدّد</button>
     </menu>
   </form>
 </dialog>
@@ -355,79 +265,6 @@
     </div>
     <p class="hint">كل سطر يمثل بطولة. الترتيب:<br>
       <code>الاسم, المدينة, الصالة, من (YYYY-MM-DD), إلى (YYYY-MM-DD)</code>
-    </p>
-    <label>الصق البيانات
-      <textarea name="text" rows="8" required></textarea>
-    </label>
-    <menu>
-      <button value="cancel" class="btn ghost" formnovalidate>إلغاء</button>
-      <button value="save" class="btn">استيراد</button>
-    </menu>
-  </form>
-</dialog>
-
-<!-- استيراد مباريات من Excel/CSV -->
-<dialog id="dlg-match-file">
-  <form method="dialog" class="form" data-form="match-file">
-    <div class="form-head">
-      <h3>استيراد مباريات من ملف</h3>
-      <button type="button" class="dlg-close" data-close aria-label="إغلاق">×</button>
-    </div>
-    <p class="hint">
-      اقبل ملفات <code>.xlsx</code> و<code>.xls</code> و<code>.csv</code>.
-      السطر الأول عناوين الأعمدة، وكل سطر بعده مباراة واحدة.<br>
-      البطولة المستهدفة: <b id="file-target-name">—</b>
-    </p>
-
-    <p class="hint" style="margin-bottom:2px"><b>مثال على شكل الملف:</b></p>
-    <div class="tpl-wrap">
-      <table class="tpl">
-        <thead>
-          <tr>
-            <th>النادي الأول</th>
-            <th>النادي الثاني</th>
-            <th>الموعد</th>
-            <th>الدور</th>
-            <th>الفئة</th>
-          </tr>
-        </thead>
-      </table>
-    </div>
-
-    <p class="hint">
-      الأعمدة الإجبارية:
-      <b>النادي الأول</b>
-      و
-      <b>النادي الثاني</b>.
-      الباقي اختياري. الموعد يقبل الصيغ:
-      <code>2026-10-01 18:00</code>
-      أو
-      <code>2026-10-01T18:00</code>.
-    </p>
-
-    <p><button type="button" class="link" id="btn-download-tpl">⬇︎ تنزيل قالب Excel جاهز</button></p>
-
-    <label>اختر الملف
-      <input type="file" name="file" id="file-input" accept=".xlsx,.xls,.csv" required />
-    </label>
-    <div id="file-preview" class="sb-list" hidden></div>
-
-    <menu>
-      <button value="cancel" class="btn ghost" formnovalidate>إلغاء</button>
-      <button value="save" class="btn">استيراد</button>
-    </menu>
-  </form>
-</dialog>
-
-<!-- استيراد مباريات (نص) -->
-<dialog id="dlg-import-matches">
-  <form method="dialog" class="form" data-form="import-matches">
-    <div class="form-head">
-      <h3>استيراد مباريات</h3>
-      <button type="button" class="dlg-close" data-close aria-label="إغلاق">×</button>
-    </div>
-    <p class="hint">تُستورد للبطولة المختارة حالياً. الترتيب:<br>
-      <code>النادي الأول, النادي الثاني, الموعد (YYYY-MM-DDTHH:mm), الدور, الفئة</code>
     </p>
     <label>الصق البيانات
       <textarea name="text" rows="8" required></textarea>

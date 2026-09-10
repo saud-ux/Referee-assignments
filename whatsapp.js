@@ -6,10 +6,10 @@ const GRAPH = `https://graph.facebook.com/${VERSION}`;
 const TOKEN = () => process.env.WHATSAPP_TOKEN;
 const PHONE_ID = () => process.env.WHATSAPP_PHONE_ID;
 
-export const TEMPLATE_NAME = process.env.WA_TEMPLATE_NAME || 'referee_assignment_ar';
+export const TEMPLATE_NAME = process.env.WA_TEMPLATE_NAME || 'referee_availability_ar';
 export const TEMPLATE_LANG = process.env.WA_TEMPLATE_LANG || 'ar';
 
-/** هل الإرسال التلقائي عبر واتساب مفعّل؟ إن لا، تُرسل التكليفات عبر رابط الرد. */
+/** هل الإرسال التلقائي عبر واتساب مفعّل؟ إن لا، تُرسل النداءات عبر رابط الرد. */
 export const isLive = () => Boolean(TOKEN() && PHONE_ID());
 
 /** تحويل الرقم إلى صيغة دولية بدون + وبدون أصفار بادئة */
@@ -42,7 +42,7 @@ async function graph(pathname, body) {
 }
 
 /**
- * إرسال قالب التكليف مع زرّي "أقبل" و"أعتذر".
+ * إرسال قالب نداء التوفّر مع زرّي "متوفّر" و"أعتذر".
  * الزر يرجع في الويبهوك بالحمولة ACCEPT:<id> أو DECLINE:<id>
  */
 export async function sendAssignment({ to, assignmentId, params }) {

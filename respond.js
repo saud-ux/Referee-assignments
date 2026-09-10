@@ -73,41 +73,47 @@ const SHELL = (title, body) => `<!DOCTYPE html>
 <body><div class="card">${body}</div></body>
 </html>`;
 
-const fmt = (iso) => {
-  if (!iso) return 'غير محدد';
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return String(iso);
+const fmtDay = (ymd) => {
+  if (!ymd) return '';
+  const d = new Date(`${ymd}T00:00:00`);
+  if (Number.isNaN(d.getTime())) return String(ymd);
   return new Intl.DateTimeFormat('ar-SA-u-ca-gregory', {
-    dateStyle: 'full',
-    timeStyle: 'short',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
     timeZone: process.env.TZ || 'Asia/Riyadh',
   }).format(d);
 };
 
-const teamsOf = (m) =>
-  `${m?.clubA || m?.playerA || '—'} × ${m?.clubB || m?.playerB || '—'}`;
+const periodOf = (t) => {
+  const s = fmtDay(t?.startDate);
+  const e = fmtDay(t?.endDate);
+  if (s && e) return s === e ? s : `من ${s} إلى ${e}`;
+  if (s) return `تبدأ ${s}`;
+  return 'غير محددة';
+};
+
+const placeOf = (t) => [t?.venue, t?.city].filter(Boolean).join(' — ') || '—';
 
 /** صفحة السؤال — تُعرض للحكم قبل أن يرد */
-export function askPage({ referee, match, tournament, token }) {
+export function askPage({ referee, tournament, token }) {
   const facts = [
-    ['البطولة', tournament?.name],
-    ['الموعد', fmt(match?.startTime)],
-    ['الطاولة', match?.table],
-    ['الدور', match?.round],
-    ['الصالة', tournament?.venue || tournament?.city],
+    ['الفترة', periodOf(tournament)],
+    ['المكان', placeOf(tournament)],
   ]
-    .filter(([, v]) => v)
+    .filter(([, v]) => v && v !== '—')
     .map(([k, v]) => `<div class="fact"><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`)
     .join('');
 
   return SHELL(
-    'تكليف تحكيم',
-    `<h1>تكليف تحكيم</h1>
-     <p class="lede">مرحباً ${esc(referee?.name || 'أستاذ')}، كُلِّفت بإدارة هذه المباراة.</p>
-     <div class="teams">${esc(teamsOf(match))}</div>
+    'ترشيح للمشاركة',
+    `<h1>ترشيح للمشاركة</h1>
+     <p class="lede">مرحباً ${esc(referee?.name || 'أستاذ')}، رُشِّحت للمشاركة في تحكيم هذه البطولة.</p>
+     <div class="teams">${esc(tournament?.name || 'البطولة')}</div>
      <dl>${facts}</dl>
+     <p class="note" style="margin:0 0 18px">يُحدَّد تكليفك اليومي في التجمع على الأرض. نأمل تأكيد توفّرك للمشاركة.</p>
      <form method="post" class="btns">
-       <button class="yes" name="action" value="accept" type="submit">أقبل التكليف</button>
+       <button class="yes" name="action" value="accept" type="submit">أنا متوفّر</button>
        <button class="no" name="action" value="decline" type="submit">أعتذر</button>
      </form>
      <p class="note">ردّك يُسجَّل مباشرة لدى لجنة التحكيم.</p>`
@@ -115,18 +121,18 @@ export function askPage({ referee, match, tournament, token }) {
 }
 
 /** صفحة التأكيد — بعد أن يرد الحكم، أو إذا كان قد ردّ سابقاً */
-export function donePage({ status, match, alreadyAnswered = false }) {
+export function donePage({ status, tournament, alreadyAnswered = false }) {
   const accepted = status === 'accepted';
   return SHELL(
-    accepted ? 'تم قبول التكليف' : 'تم تسجيل الاعتذار',
+    accepted ? 'تم تأكيد التوفّر' : 'تم تسجيل الاعتذار',
     `<h1>${accepted ? 'شكراً لك' : 'تم التسجيل'}</h1>
-     <div class="teams">${esc(teamsOf(match))}</div>
+     <div class="teams">${esc(tournament?.name || 'البطولة')}</div>
      <div class="badge ${accepted ? 'ok' : 'no'}">
-       ${accepted ? 'قبلت التكليف' : 'اعتذرت عن التكليف'}
+       ${accepted ? 'أكّدت توفّرك للمشاركة' : 'اعتذرت عن المشاركة'}
      </div>
      <p class="note">
-       ${alreadyAnswered ? 'سبق أن سجّلت ردّك على هذا التكليف.' : 'وصل ردّك للجنة التحكيم.'}
-       ${accepted ? '<br>بالتوفيق.' : ''}
+       ${alreadyAnswered ? 'سبق أن سجّلت ردّك على هذا الترشيح.' : 'وصل ردّك للجنة التحكيم.'}
+       ${accepted ? '<br>سيصلك التكليف اليومي في التجمع.' : ''}
      </p>`
   );
 }

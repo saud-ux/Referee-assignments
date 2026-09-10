@@ -13,34 +13,12 @@ const newToken = () => crypto.randomBytes(24).toString('base64url');
 const now = () => new Date().toISOString();
 const bad = (res, msg, code = 400) => res.status(code).json({ error: msg });
 
-/** المدة التي تُعتبر خلالها مباراتان متعارضتين على نفس الحكم */
-const CONFLICT_WINDOW_MS = Number(process.env.CONFLICT_WINDOW_MINUTES || 90) * 60_000;
-/** مهلة انتظار رد الحكم قبل اعتبار التكليف منتهياً */
+/** مهلة انتظار رد الحكم قبل اعتبار النداء منتهياً */
 const RESPONSE_TIMEOUT_MS = Number(process.env.RESPONSE_TIMEOUT_HOURS || 6) * 3_600_000;
 
 const OPEN_STATUSES = ['pending', 'sent', 'accepted'];
 
-/** يبحث عن مباراة أخرى مكلّف بها نفس الحكم ضمن نافذة التعارض */
-async function findConflict(refereeId, match) {
-  if (!match?.startTime) return null;
-  const target = new Date(match.startTime).getTime();
-  if (Number.isNaN(target)) return null;
-
-  const mine = (await store.list('assignments', { refereeId })).filter(
-    (a) => OPEN_STATUSES.includes(a.status) && a.matchId !== match.id
-  );
-
-  for (const a of mine) {
-    const other = await store.get('matches', a.matchId);
-    if (!other?.startTime) continue;
-    const t = new Date(other.startTime).getTime();
-    if (Number.isNaN(t)) continue;
-    if (Math.abs(t - target) < CONFLICT_WINDOW_MS) return { assignment: a, match: other };
-  }
-  return null;
-}
-
-/** يحوّل التكاليف التي تجاوزت مهلة الرد إلى الحالة "expired" */
+/** يحوّل النداءات التي تجاوزت مهلة الرد إلى الحالة "expired" */
 export async function sweepExpired() {
   const cutoff = Date.now() - RESPONSE_TIMEOUT_MS;
   const rows = await store.list('assignments', {});
@@ -66,6 +44,30 @@ const fmtDateTime = (iso) => {
     timeZone: process.env.TZ || 'Asia/Riyadh',
   }).format(d);
 };
+
+/** يصوغ فترة البطولة (من تاريخ إلى تاريخ) نصّاً عربياً للنداء */
+const fmtDay = (ymd) => {
+  if (!ymd) return '';
+  const d = new Date(`${ymd}T00:00:00`);
+  if (Number.isNaN(d.getTime())) return String(ymd);
+  return new Intl.DateTimeFormat('ar-SA-u-ca-gregory', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    timeZone: process.env.TZ || 'Asia/Riyadh',
+  }).format(d);
+};
+
+const fmtPeriod = (tournament) => {
+  const s = fmtDay(tournament?.startDate);
+  const e = fmtDay(tournament?.endDate);
+  if (s && e) return s === e ? s : `من ${s} إلى ${e}`;
+  if (s) return `تبدأ ${s}`;
+  return 'غير محددة';
+};
+
+const placeOf = (tournament) =>
+  [tournament?.venue, tournament?.city].filter(Boolean).join(' — ') || '—';
 
 /* ------------------------- الحالة العامة ------------------------- */
 router.get('/status', (req, res) => {
@@ -385,29 +387,25 @@ router.delete('/matches/:id', async (req, res) => {
 router.get('/assignments', async (req, res) => {
   const where = {};
   if (req.query.tournamentId) where.tournamentId = req.query.tournamentId;
-  if (req.query.matchId) where.matchId = req.query.matchId;
+  if (req.query.refereeId) where.refereeId = req.query.refereeId;
   const rows = await store.list('assignments', where);
   rows.sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
   res.json(rows);
 });
 
 async function buildParams(assignment) {
-  const [referee, match, tournament] = await Promise.all([
+  const [referee, tournament] = await Promise.all([
     store.get('referees', assignment.refereeId),
-    store.get('matches', assignment.matchId),
     store.get('tournaments', assignment.tournamentId),
   ]);
   return {
     referee,
-    match,
     tournament,
     params: [
       referee?.name || 'الحكم',
       tournament?.name || 'البطولة',
-      `${match?.clubA || match?.playerA || '—'} × ${match?.clubB || match?.playerB || '—'}`,
-      fmtDateTime(match?.startTime),
-      tournament?.venue || tournament?.city || '—',
-      match?.table || '—',
+      fmtPeriod(tournament),
+      placeOf(tournament),
     ],
   };
 }
@@ -429,36 +427,17 @@ async function dispatch(assignment) {
   });
 }
 
-router.post('/assignments', async (req, res) => {
-  const { matchId, refereeId, role = 'حكم مباراة', force = false } = req.body || {};
-  if (!matchId || !refereeId) return bad(res, 'المباراة والحكم مطلوبان');
-
-  const match = await store.get('matches', matchId);
-  if (!match) return bad(res, 'المباراة غير موجودة', 404);
-
-  const existing = await store.list('assignments', { matchId });
-  if (existing.some((a) => ['sent', 'accepted'].includes(a.status))) {
-    return bad(res, 'يوجد تكليف قائم لهذه المباراة — ألغِه أولاً');
+/** ينشئ نداء توفّر لحكم في بطولة (بدون إرسال). يمنع تكرار نداء قائم. */
+async function createNomination(tournamentId, refereeId) {
+  const existing = await store.list('assignments', { tournamentId, refereeId });
+  if (existing.some((a) => OPEN_STATUSES.includes(a.status))) {
+    return { skipped: true, reason: 'يوجد نداء قائم لهذا الحكم في البطولة' };
   }
-
-  if (!force) {
-    const clash = await findConflict(refereeId, match);
-    if (clash) {
-      const other = clash.match;
-      const label = `${other.clubA || other.playerA || '—'} × ${other.clubB || other.playerB || '—'}`;
-      return res.status(409).json({
-        error: `الحكم مكلّف بمباراة أخرى قريبة زمنياً: ${label} — ${fmtDateTime(other.startTime)}`,
-        conflict: true,
-      });
-    }
-  }
-
   const assignment = await store.insert('assignments', {
     id: newId(),
-    matchId,
     refereeId,
-    tournamentId: match.tournamentId,
-    role,
+    tournamentId,
+    role: 'حكم بطولة',
     status: 'pending',
     token: newToken(),
     createdAt: now(),
@@ -467,6 +446,22 @@ router.post('/assignments', async (req, res) => {
     waMessageId: null,
     error: null,
   });
+  return { assignment };
+}
+
+router.post('/assignments', async (req, res) => {
+  const { tournamentId, refereeId } = req.body || {};
+  if (!tournamentId || !refereeId) return bad(res, 'البطولة والحكم مطلوبان');
+
+  const [tournament, referee] = await Promise.all([
+    store.get('tournaments', tournamentId),
+    store.get('referees', refereeId),
+  ]);
+  if (!tournament) return bad(res, 'البطولة غير موجودة', 404);
+  if (!referee) return bad(res, 'الحكم غير موجود', 404);
+
+  const { assignment, skipped, reason } = await createNomination(tournamentId, refereeId);
+  if (skipped) return bad(res, reason, 409);
 
   try {
     res.status(201).json(await dispatch(assignment));
@@ -477,6 +472,40 @@ router.post('/assignments', async (req, res) => {
     });
     res.status(502).json({ ...failed, error: err.message });
   }
+});
+
+/** نداء جماعي: يرسل لكل الحكّام المحددين الذين لا يوجد لهم نداء قائم */
+router.post('/assignments/bulk', async (req, res) => {
+  const { tournamentId } = req.body || {};
+  const refereeIds = Array.isArray(req.body?.refereeIds) ? req.body.refereeIds : [];
+  if (!tournamentId || !refereeIds.length) return bad(res, 'البطولة والحكّام مطلوبان');
+
+  const tournament = await store.get('tournaments', tournamentId);
+  if (!tournament) return bad(res, 'البطولة غير موجودة', 404);
+
+  let sent = 0;
+  let skipped = 0;
+  let failed = 0;
+  for (const refereeId of refereeIds) {
+    const referee = await store.get('referees', refereeId);
+    if (!referee) {
+      skipped++;
+      continue;
+    }
+    const { assignment, skipped: dup } = await createNomination(tournamentId, refereeId);
+    if (dup) {
+      skipped++;
+      continue;
+    }
+    try {
+      await dispatch(assignment);
+      sent++;
+    } catch (err) {
+      await store.update('assignments', assignment.id, { status: 'failed', error: err.message });
+      failed++;
+    }
+  }
+  res.status(201).json({ sent, skipped, failed });
 });
 
 router.post('/assignments/:id/resend', async (req, res) => {
@@ -519,27 +548,26 @@ async function loadByToken(token) {
   const all = await store.list('assignments', {});
   const assignment = all.find((a) => a.token === token);
   if (!assignment) return null;
-  const [referee, match, tournament] = await Promise.all([
+  const [referee, tournament] = await Promise.all([
     store.get('referees', assignment.refereeId),
-    store.get('matches', assignment.matchId),
     store.get('tournaments', assignment.tournamentId),
   ]);
-  return { assignment, referee, match, tournament };
+  return { assignment, referee, tournament };
 }
 
 const DEAD_REASONS = {
-  cancelled: 'هذا التكليف أُلغي.',
-  expired: 'انتهت مهلة الرد على هذا التكليف.',
-  failed: 'هذا التكليف غير نشط.',
+  cancelled: 'هذا النداء أُلغي.',
+  expired: 'انتهت مهلة الرد على هذا النداء.',
+  failed: 'هذا النداء غير نشط.',
 };
 
 respondRoutes.get('/:token', async (req, res) => {
   const data = await loadByToken(req.params.token);
   if (!data) return res.status(404).send(page.deadPage('الرابط غير صحيح أو انتهت صلاحيته.'));
 
-  const { assignment, match } = data;
+  const { assignment, tournament } = data;
   if (['accepted', 'declined'].includes(assignment.status)) {
-    return res.send(page.donePage({ status: assignment.status, match, alreadyAnswered: true }));
+    return res.send(page.donePage({ status: assignment.status, tournament, alreadyAnswered: true }));
   }
   if (DEAD_REASONS[assignment.status]) {
     return res.status(410).send(page.deadPage(DEAD_REASONS[assignment.status]));
@@ -551,9 +579,9 @@ respondRoutes.post('/:token', async (req, res) => {
   const data = await loadByToken(req.params.token);
   if (!data) return res.status(404).send(page.deadPage('الرابط غير صحيح أو انتهت صلاحيته.'));
 
-  const { assignment, match } = data;
+  const { assignment, tournament } = data;
   if (['accepted', 'declined'].includes(assignment.status)) {
-    return res.send(page.donePage({ status: assignment.status, match, alreadyAnswered: true }));
+    return res.send(page.donePage({ status: assignment.status, tournament, alreadyAnswered: true }));
   }
   if (DEAD_REASONS[assignment.status]) {
     return res.status(410).send(page.deadPage(DEAD_REASONS[assignment.status]));
@@ -568,7 +596,7 @@ respondRoutes.post('/:token', async (req, res) => {
     respondedAt: now(),
     responseVia: 'رابط',
   });
-  res.send(page.donePage({ status, match }));
+  res.send(page.donePage({ status, tournament }));
 });
 
 /* ------------------------- ويبهوك واتساب ------------------------- */
@@ -608,13 +636,13 @@ webhook.post('/', async (req, res) => {
       });
 
       // تأكيد للحكم — مجاني لأنه داخل نافذة الـ24 ساعة
-      const { referee, match } = await buildParams(assignment);
-      const line = `${match?.clubA || match?.playerA || ''} × ${match?.clubB || match?.playerB || ''}`;
+      const { referee, tournament } = await buildParams(assignment);
+      const line = tournament?.name || 'البطولة';
       await wa.sendText(
         referee.phone,
         status === 'accepted'
-          ? `تم تسجيل قبولك للتكليف: ${line}. بالتوفيق.`
-          : `تم تسجيل اعتذارك عن التكليف: ${line}. شكراً لإبلاغنا.`
+          ? `تم تسجيل توفّرك للمشاركة في ${line}. سيصلك التكليف اليومي في التجمع.`
+          : `تم تسجيل اعتذارك عن المشاركة في ${line}. شكراً لإبلاغنا.`
       );
     }
   } catch (err) {
