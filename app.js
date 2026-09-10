@@ -135,7 +135,8 @@ function buildInvite(assignmentId) {
 
   const link = `${location.origin}/r/${a.token}`;
   const lines = [
-    `السلام عليكم ${ref.name}`,
+    'السلام عليكم',
+    `زميلي الحكم/ ${ref.name}`,
     '',
     'تم ترشيحك للمشاركة في تحكيم:',
     `🏆 ${tour.name}`,
