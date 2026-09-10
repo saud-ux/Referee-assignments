@@ -110,7 +110,7 @@ function fmtPeriod(t) {
 const placeOf = (t) => [t?.venue, t?.city].filter(Boolean).join(' — ') || '';
 const refereeName = (id) => state.referees.find((r) => r.id === id)?.name || 'حكم محذوف';
 
-/** نداء التوفّر القائم أو الأحدث لحكم في البطولة الحالية */
+/** التكليف القائم أو الأحدث لحكم في البطولة الحالية */
 function assignmentFor(refereeId) {
   const mine = state.assignments.filter((a) => a.refereeId === refereeId);
   return (
@@ -121,7 +121,7 @@ function assignmentFor(refereeId) {
   );
 }
 
-/** يبني رابط الرد ونص رسالة الواتساب لنداء معيّن */
+/** يبني رابط الرد ونص رسالة الواتساب لتكليف معيّن */
 function buildInvite(assignmentId) {
   const a = state.assignments.find((x) => x.id === assignmentId);
   if (!a?.token) return null;
@@ -473,7 +473,7 @@ function renderReferees() {
 /* ------------- لوحة التوفّر ------------- */
 function actionsFor(r, a) {
   if (!a || ['declined', 'expired', 'cancelled', 'failed'].includes(a.status)) {
-    return `<button class="btn small" data-nominate="${r.id}">إرسال نداء</button>`;
+    return `<button class="btn small" data-nominate="${r.id}">إرسال التكليف</button>`;
   }
   if (['sent', 'pending'].includes(a.status)) {
     return [
@@ -487,7 +487,7 @@ function actionsFor(r, a) {
   if (a.status === 'accepted') {
     return `<button class="btn danger small" data-cancel="${a.id}">إلغاء الترشيح</button>`;
   }
-  return `<button class="btn small" data-nominate="${r.id}">إرسال نداء</button>`;
+  return `<button class="btn small" data-nominate="${r.id}">إرسال التكليف</button>`;
 }
 
 function statusCell(a) {
@@ -590,21 +590,21 @@ function updateTally() {
   $('#n-empty').textContent = counts.empty;
 }
 
-/* ------- النداء الجماعي ------- */
+/* ------- التكليف الجماعي ------- */
 async function nominateAll() {
   if (!state.tournamentId) return toast('اختر بطولة أولاً');
   const pending = state.referees.filter((r) => {
     const a = assignmentFor(r.id);
     return !a || !OPEN.includes(a.status);
   });
-  if (!pending.length) return toast('كل الحكّام لديهم نداء قائم');
-  if (!confirm(`إرسال نداء توفّر إلى ${pending.length} حكم؟`)) return;
+  if (!pending.length) return toast('كل الحكّام لديهم تكليف قائم');
+  if (!confirm(`إرسال التكليف إلى ${pending.length} حكم؟`)) return;
   try {
     const r = await api('/assignments/bulk', {
       method: 'POST',
       body: { tournamentId: state.tournamentId, refereeIds: pending.map((x) => x.id) },
     });
-    const parts = [`أُرسل ${r.sent} نداء`];
+    const parts = [`أُرسل ${r.sent} تكليف`];
     if (r.skipped) parts.push(`تُخطّي ${r.skipped}`);
     if (r.failed) parts.push(`فشل ${r.failed}`);
     toast(parts.join(' — '));
@@ -658,7 +658,7 @@ document.addEventListener('click', async (e) => {
         method: 'POST',
         body: { tournamentId: state.tournamentId, refereeId: t.dataset.nominate },
       });
-      toast('أُرسل النداء');
+      toast('أُرسل التكليف');
       return loadBoard();
     }
 
@@ -686,10 +686,10 @@ document.addEventListener('click', async (e) => {
       const warn =
         a?.status === 'accepted'
           ? `${who} أكّد توفّره. إلغاء الترشيح يعني أنه لن يُحسب ضمن المتوفّرين — تأكد من إبلاغه.\n\nمتأكد؟`
-          : `إلغاء نداء ${who}؟`;
+          : `إلغاء تكليف ${who}؟`;
       if (!confirm(warn)) return;
       await api(`/assignments/${t.dataset.cancel}/cancel`, { method: 'POST' });
-      toast('أُلغي النداء');
+      toast('أُلغي التكليف');
       return loadBoard();
     }
 
@@ -703,7 +703,7 @@ document.addEventListener('click', async (e) => {
     }
 
     if (t.dataset.delTournament) {
-      if (!confirm('حذف البطولة وكل نداءاتها؟')) return;
+      if (!confirm('حذف البطولة وكل تكاليفها؟')) return;
       await api(`/tournaments/${t.dataset.delTournament}`, { method: 'DELETE' });
       if (state.tournamentId === t.dataset.delTournament) state.tournamentId = null;
       await loadSidebar();

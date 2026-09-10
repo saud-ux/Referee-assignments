@@ -13,12 +13,12 @@ const newToken = () => crypto.randomBytes(24).toString('base64url');
 const now = () => new Date().toISOString();
 const bad = (res, msg, code = 400) => res.status(code).json({ error: msg });
 
-/** مهلة انتظار رد الحكم قبل اعتبار النداء منتهياً */
+/** مهلة انتظار رد الحكم قبل اعتبار التكليف منتهياً */
 const RESPONSE_TIMEOUT_MS = Number(process.env.RESPONSE_TIMEOUT_HOURS || 6) * 3_600_000;
 
 const OPEN_STATUSES = ['pending', 'sent', 'accepted'];
 
-/** يحوّل النداءات التي تجاوزت مهلة الرد إلى الحالة "expired" */
+/** يحوّل التكاليف التي تجاوزت مهلة الرد إلى الحالة "expired" */
 export async function sweepExpired() {
   const cutoff = Date.now() - RESPONSE_TIMEOUT_MS;
   const rows = await store.list('assignments', {});
@@ -45,7 +45,7 @@ const fmtDateTime = (iso) => {
   }).format(d);
 };
 
-/** يصوغ فترة البطولة (من تاريخ إلى تاريخ) نصّاً عربياً للنداء */
+/** يصوغ فترة البطولة (من تاريخ إلى تاريخ) نصّاً عربياً للتكليف */
 const fmtDay = (ymd) => {
   if (!ymd) return '';
   const d = new Date(`${ymd}T00:00:00`);
@@ -427,11 +427,11 @@ async function dispatch(assignment) {
   });
 }
 
-/** ينشئ نداء توفّر لحكم في بطولة (بدون إرسال). يمنع تكرار نداء قائم. */
+/** ينشئ تكليفاً لحكم في بطولة (بدون إرسال). يمنع تكرار تكليف قائم. */
 async function createNomination(tournamentId, refereeId) {
   const existing = await store.list('assignments', { tournamentId, refereeId });
   if (existing.some((a) => OPEN_STATUSES.includes(a.status))) {
-    return { skipped: true, reason: 'يوجد نداء قائم لهذا الحكم في البطولة' };
+    return { skipped: true, reason: 'يوجد تكليف قائم لهذا الحكم في البطولة' };
   }
   const assignment = await store.insert('assignments', {
     id: newId(),
@@ -474,7 +474,7 @@ router.post('/assignments', async (req, res) => {
   }
 });
 
-/** نداء جماعي: يرسل لكل الحكّام المحددين الذين لا يوجد لهم نداء قائم */
+/** تكليف جماعي: يرسل لكل الحكّام المحددين الذين لا يوجد لهم تكليف قائم */
 router.post('/assignments/bulk', async (req, res) => {
   const { tournamentId } = req.body || {};
   const refereeIds = Array.isArray(req.body?.refereeIds) ? req.body.refereeIds : [];
@@ -556,9 +556,9 @@ async function loadByToken(token) {
 }
 
 const DEAD_REASONS = {
-  cancelled: 'هذا النداء أُلغي.',
-  expired: 'انتهت مهلة الرد على هذا النداء.',
-  failed: 'هذا النداء غير نشط.',
+  cancelled: 'هذا التكليف أُلغي.',
+  expired: 'انتهت مهلة الرد على هذا التكليف.',
+  failed: 'هذا التكليف غير نشط.',
 };
 
 respondRoutes.get('/:token', async (req, res) => {

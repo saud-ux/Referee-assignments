@@ -9,7 +9,7 @@ const PHONE_ID = () => process.env.WHATSAPP_PHONE_ID;
 export const TEMPLATE_NAME = process.env.WA_TEMPLATE_NAME || 'referee_availability_ar';
 export const TEMPLATE_LANG = process.env.WA_TEMPLATE_LANG || 'ar';
 
-/** هل الإرسال التلقائي عبر واتساب مفعّل؟ إن لا، تُرسل النداءات عبر رابط الرد. */
+/** هل الإرسال التلقائي عبر واتساب مفعّل؟ إن لا، تُرسل التكاليف عبر رابط الرد. */
 export const isLive = () => Boolean(TOKEN() && PHONE_ID());
 
 /** تحويل الرقم إلى صيغة دولية بدون + وبدون أصفار بادئة */
@@ -42,7 +42,7 @@ async function graph(pathname, body) {
 }
 
 /**
- * إرسال قالب نداء التوفّر مع زرّي "متوفّر" و"أعتذر".
+ * إرسال قالب التكليف مع زرّي "متوفّر" و"أعتذر".
  * الزر يرجع في الويبهوك بالحمولة ACCEPT:<id> أو DECLINE:<id>
  */
 export async function sendAssignment({ to, assignmentId, params }) {
