@@ -111,7 +111,7 @@ export function askPage({ referee, tournament, token }) {
      <p class="lede">مرحباً ${esc(referee?.name || 'أستاذ')}، رُشِّحت للمشاركة في تحكيم هذه البطولة.</p>
      <div class="teams">${esc(tournament?.name || 'البطولة')}</div>
      <dl>${facts}</dl>
-     <p class="note" style="margin:0 0 18px">يُحدَّد تكليفك اليومي في التجمع على الأرض. نأمل تأكيد توفّرك للمشاركة.</p>
+     <p class="note" style="margin:0 0 18px">يُحدَّد تكليفك اليومي في التجمع.</p>
      <form method="post" class="btns">
        <button class="yes" name="action" value="accept" type="submit">أنا متوفّر</button>
        <button class="no" name="action" value="decline" type="submit">أعتذر</button>
