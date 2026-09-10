@@ -386,7 +386,17 @@ summary.panel-head::-webkit-details-marker { display: none; }
 .chip-status.s-cancelled, .chip-status.s-failed { background: #eef1f0; color: var(--muted); }
 .mtbl tr[data-state="accepted"] { border-inline-end: 3px solid var(--table); }
 .mtbl tr[data-state="sent"], .mtbl tr[data-state="pending"] { border-inline-end: 3px solid var(--ball); }
-.mtbl tr[data-state="declined"], .mtbl tr[data-state="expired"] { border-inline-end: 3px solid var(--red); }
+.mtbl tr[data-state="declined"], .mtbl tr[data-state="expired"] {
+  border-inline-end: 4px solid var(--red);
+  background: #fdf1ec;
+}
+.mtbl tr[data-state="declined"]:hover, .mtbl tr[data-state="expired"]:hover { background: #fbe6dd; }
+.mtbl tr[data-state="declined"] td.ref b, .mtbl tr[data-state="expired"] td.ref b { color: var(--red); }
+/* شارة الاعتذار أبرز: أكبر خطاً وبإطار أحمر */
+.chip-status.s-declined, .chip-status.s-expired {
+  font-size: 12.5px;
+  border: 1px solid var(--red);
+}
 .mtbl td.acts {
   display: flex;
   gap: 4px;

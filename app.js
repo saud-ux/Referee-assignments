@@ -492,8 +492,12 @@ function actionsFor(r, a) {
 
 function statusCell(a) {
   if (!a) return '<div class="chip-status s-empty">لم يُرسل</div>';
+  const icon =
+    a.status === 'accepted' ? '✓ '
+    : ['declined', 'expired'].includes(a.status) ? '✕ '
+    : '';
   const when = a.respondedAt ? `<div class="muted" style="font-size:12px">${fmtDateTime(a.respondedAt)}</div>` : '';
-  return `<div class="chip-status s-${a.status}">${STATUS[a.status] || a.status}</div>${when}`;
+  return `<div class="chip-status s-${a.status}">${icon}${STATUS[a.status] || a.status}</div>${when}`;
 }
 
 /** يصنّف حالة الحكم لأغراض التصفية والعدّاد */
