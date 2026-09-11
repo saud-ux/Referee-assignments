@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>وثيقة تقنية · نظام تكليف حكّام تنس الطاولة</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Zain:wght@700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --ink: #14202b; --bg: #eaeeec; --surface: #fff;
+    --table: #0f5c4e; --table-soft: #e3efeb; --table-deep: #0a3f35;
+    --ball: #d8541f; --red: #a8322a; --muted: #6d7c83; --line: #d7dedb;
+    --code-bg: #0f2b25; --code-ink: #dfeee9;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: "IBM Plex Sans Arabic", system-ui, sans-serif;
+    font-size: 15px; line-height: 1.85;
+  }
+  code, .en, pre { font-family: "IBM Plex Mono", ui-monospace, monospace; unicode-bidi: isolate; }
+  .en { direction: ltr; unicode-bidi: isolate; }
+
+  .page {
+    max-width: 820px; margin: 0 auto; padding: 40px clamp(18px, 5vw, 56px);
+    background: var(--surface); min-height: 100vh;
+  }
+
+  /* الترويسة */
+  .cover {
+    background: linear-gradient(135deg, var(--table-deep), var(--table));
+    color: #fff; border-radius: 16px; padding: 30px 28px; margin-bottom: 34px;
+    position: relative; overflow: hidden;
+  }
+  .cover::after {
+    content: ""; position: absolute; left: -40px; bottom: -50px;
+    width: 180px; height: 180px; border-radius: 50%;
+    background: var(--ball); opacity: .16;
+  }
+  .cover .kicker { font-size: 13px; letter-spacing: .5px; opacity: .82; margin: 0 0 10px; }
+  .cover h1 {
+    font-family: "Zain", "IBM Plex Sans Arabic", sans-serif; font-weight: 800;
+    font-size: 34px; line-height: 1.2; margin: 0 0 8px;
+  }
+  .cover .sub { font-size: 15.5px; opacity: .92; margin: 0 0 14px; max-width: 60ch; }
+  .cover .en-title { font-size: 13px; opacity: .8; border-top: 1px solid rgba(255,255,255,.22); padding-top: 12px; }
+
+  /* الأقسام */
+  section { margin: 0 0 26px; break-inside: avoid; }
+  .sec-head { display: flex; align-items: center; gap: 12px; margin: 0 0 12px; }
+  .num {
+    flex: none; width: 30px; height: 30px; border-radius: 8px;
+    background: var(--table); color: #fff; font-weight: 700;
+    display: grid; place-items: center; font-size: 15px;
+  }
+  h2 {
+    font-family: "Zain", "IBM Plex Sans Arabic", sans-serif; font-weight: 800;
+    font-size: 22px; margin: 0; color: var(--table-deep);
+  }
+  h2 .en { font-size: 14px; color: var(--muted); font-weight: 500; }
+  p { margin: 0 0 10px; }
+  ul { margin: 0 0 10px; padding-inline-start: 22px; }
+  li { margin: 0 0 6px; }
+  .lead { font-size: 15.5px; }
+  strong { color: var(--table-deep); font-weight: 600; }
+
+  /* بطاقات */
+  .grid { display: grid; gap: 12px; grid-template-columns: repeat(2, 1fr); }
+  .card {
+    background: var(--table-soft); border: 1px solid var(--line);
+    border-radius: 11px; padding: 13px 15px;
+  }
+  .card h3 { margin: 0 0 4px; font-size: 14.5px; color: var(--table-deep); }
+  .card p { margin: 0; font-size: 13.5px; color: #33474d; }
+
+  /* جداول */
+  table { width: 100%; border-collapse: collapse; margin: 6px 0 8px; font-size: 13.8px; }
+  th, td { text-align: right; padding: 9px 12px; border-bottom: 1px solid var(--line); }
+  thead th { background: var(--table); color: #fff; font-weight: 600; border-bottom: 0; }
+  thead th:first-child { border-radius: 0 8px 0 0; }
+  thead th:last-child { border-radius: 8px 0 0 0; }
+  tbody tr:nth-child(even) { background: #f4f8f6; }
+  td .en, th .en { font-size: 13px; }
+  .rows td:last-child { color: var(--muted); white-space: nowrap; }
+  tfoot td { font-weight: 600; color: var(--table-deep); background: var(--table-soft); }
+
+  /* كود */
+  pre {
+    background: var(--code-bg); color: var(--code-ink);
+    border-radius: 11px; padding: 16px 18px; margin: 8px 0 4px;
+    font-size: 12.5px; line-height: 1.7; overflow-x: auto;
+    direction: ltr; text-align: left;
+  }
+  pre .c { color: #7fb8a8; }
+  code.k {
+    background: var(--table-soft); color: var(--table-deep);
+    padding: 1px 6px; border-radius: 5px; font-size: 12.5px;
+  }
+
+  .arch {
+    background: #fff; border: 1.5px dashed var(--table); border-radius: 11px;
+    padding: 13px 16px; margin: 10px 0 4px; font-size: 14.5px;
+  }
+  .arch strong { color: var(--ball); }
+
+  .tags { display: flex; flex-wrap: wrap; gap: 7px; margin: 8px 0 4px; }
+  .tag {
+    background: #fff; border: 1px solid var(--line); border-radius: 999px;
+    padding: 4px 12px; font-size: 12.5px; color: var(--table-deep);
+  }
+  .tag b { color: var(--ball); font-weight: 600; }
+
+  .foot {
+    margin-top: 34px; padding-top: 14px; border-top: 1px solid var(--line);
+    color: var(--muted); font-size: 12.5px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px;
+  }
+
+  @media (max-width: 560px) { .grid { grid-template-columns: 1fr; } }
+  @media print {
+    body { background: #fff; font-size: 12.5px; }
+    .page { max-width: none; padding: 0; }
+    section { page-break-inside: avoid; }
+    .cover { border-radius: 0; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- الغلاف -->
+  <div class="cover">
+    <p class="kicker">وثيقة تقنية · وصف النظام</p>
+    <h1>نظام تكليف حكّام تنس الطاولة</h1>
+    <p class="sub">مكتب تكليفات يرشّح الحكّام للبطولات ويرسل لهم التكليف على واتساب بزرّي «أنا متوفّر» و«أعتذر»، ويعرض ردودهم لحظياً في لوحة التحكم.</p>
+    <p class="en-title"><span class="en">Saudi Table Tennis Federation — Referee Assignment Office</span><br>
+    مبني على <span class="en">Node.js + Express</span> · تخزين قابل للتبديل <span class="en">JSON / Firestore</span> · مراسلة عبر <span class="en">WhatsApp Cloud API</span></p>
+  </div>
+
+  <!-- 1 -->
+  <section>
+    <div class="sec-head"><span class="num">١</span><h2>نبذة عن النظام</h2></div>
+    <p class="lead">نظام «مكتب التكليفات» يدير البطولات والحكّام، ويرسل لكل حكم <strong>تكليفاً على مستوى البطولة</strong> (فترتها ومكانها) عبر رسالة واتساب تحمل زرّي رد سريع: <strong>أنا متوفّر</strong> و<strong>أعتذر</strong>، ويظهر رد الحكم مباشرة في لوحة التحكم.</p>
+    <p>التكليف على مستوى البطولة لا المباراة: يؤكّد الحكم توفّره للحضور خلال فترة البطولة، ويُحدَّد تكليفه اليومي على الأرض في التجمّع. يتكامل النظام مع نظام السكوربورد القائم لسحب البطولات والمباريات دون إدخال يدوي.</p>
+  </section>
+
+  <!-- 2 -->
+  <section>
+    <div class="sec-head"><span class="num">٢</span><h2>خصائص تشغيلية</h2></div>
+    <ul>
+      <li>يعمل بالكامل عبر الإنترنت — كل ما يحتاجه الحكم متصفّح لفتح رابط الرد، دون تثبيت أي تطبيق.</li>
+      <li>يبدأ فوراً في <strong>الوضع التجريبي</strong>: كل شيء يشتغل، لكن الرسائل تُطبع في الطرفية بدل إرسالها، مع إمكانية تسجيل رد الحكم يدوياً لاختبار المسار كاملاً قبل ربط واتساب.</li>
+      <li>يعمل على أي جهاز فيه متصفح (لابتوب، جوال، تابلت) للوحة التحكم ولصفحة رد الحكم على السواء.</li>
+      <li>قابل للنشر على استضافة دائمة (مثل <span class="en">Render</span>) لاستقبال الويبهوك، وبتكلفة تشغيل منخفضة.</li>
+    </ul>
+  </section>
+
+  <!-- 3 -->
+  <section>
+    <div class="sec-head"><span class="num">٣</span><h2>التقنيات المستخدمة <span class="en">(Tech Stack)</span></h2></div>
+    <div class="grid">
+      <div class="card">
+        <h3>الواجهة الأمامية</h3>
+        <p><span class="en">HTML5 / CSS3 / JavaScript</span> خام دون إطار عمل · مكتبة <span class="en">SheetJS (XLSX) v0.18.5</span> لاستيراد الجداول من <span class="en">Excel</span> · خطوط <span class="en">IBM Plex Sans Arabic</span> و<span class="en">Zain</span>.</p>
+      </div>
+      <div class="card">
+        <h3>الخادم</h3>
+        <p><span class="en">Node.js ≥ 20</span> · إطار <span class="en">Express v4.19</span> · وحدات <span class="en">ES Modules</span> أصلية.</p>
+      </div>
+      <div class="card">
+        <h3>التخزين والمزامنة</h3>
+        <p>ملف محلي <span class="en">JSON</span> افتراضياً، أو <span class="en">Firebase Firestore</span> عبر <span class="en">firebase-admin v12</span> — بنفس الواجهة دون تغيير الكود.</p>
+      </div>
+      <div class="card">
+        <h3>المراسلة</h3>
+        <p><span class="en">WhatsApp Cloud API</span> عبر <span class="en">Meta Graph API v21.0</span> — رسائل قوالب بأزرار رد سريع، وتحقّق توقيع <span class="en">HMAC-SHA256</span>.</p>
+      </div>
+      <div class="card">
+        <h3>التكامل</h3>
+        <p>سحب البطولات والمباريات من <span class="en">Firebase Realtime Database</span> الخاصة بنظام السكوربورد.</p>
+      </div>
+      <div class="card">
+        <h3>الاستضافة</h3>
+        <p>الخادم يقدّم اللوحة و<span class="en">API</span> والويبهوك من عملية واحدة · مناسب لمنصّات مثل <span class="en">Render</span>.</p>
+      </div>
+    </div>
+    <div class="arch">
+      <strong>المعمارية:</strong> خادم <span class="en">Express</span> واحد + طبقة تخزين قابلة للتبديل (ملف محلي ⇆ <span class="en">Firestore</span>) + تكامل خارجي مع واتساب والسكوربورد. المتصفّح لا يكتب في التخزين مباشرة، بل يمرّ عبر <span class="en">API</span> الخادم.
+    </div>
+  </section>
+
+  <!-- 4 -->
+  <section>
+    <div class="sec-head"><span class="num">٤</span><h2>مكوّنات النظام (الملفات)</h2></div>
+    <p>النظام مكوّن من واجهة أمامية ملف واحد ولوحة تحكم، وخادم مقسوم إلى وحدات لكلٍّ منها دور مستقل:</p>
+    <table class="rows">
+      <thead><tr><th>الملف</th><th>الدور</th><th>الحجم</th></tr></thead>
+      <tbody>
+        <tr><td><span class="en">index.html</span></td><td>لوحة التحكم (البطولات، الحكّام، المباريات، التكاليف)</td><td>٣٤٥ سطر</td></tr>
+        <tr><td><span class="en">app.js</span></td><td>منطق الواجهة الأمامية وربطها بالـ<span class="en">API</span></td><td>٨٨٦ سطر</td></tr>
+        <tr><td><span class="en">styles.css</span></td><td>تصميم اللوحة والهوية البصرية</td><td>٦٧٦ سطر</td></tr>
+        <tr><td><span class="en">routes.js</span></td><td>واجهة البيانات + الويبهوك + صفحة الرد</td><td>٦٧٠ سطر</td></tr>
+        <tr><td><span class="en">respond.js</span></td><td>صفحات رد الحكم (سؤال / تأكيد / خطأ)</td><td>١٦٦ سطر</td></tr>
+        <tr><td><span class="en">store.js</span></td><td>طبقة التخزين (ملف محلي أو <span class="en">Firestore</span>)</td><td>١٤٦ سطر</td></tr>
+        <tr><td><span class="en">whatsapp.js</span></td><td>إرسال القوالب، التحقق من التوقيع، قراءة ردود الأزرار</td><td>١٣١ سطر</td></tr>
+        <tr><td><span class="en">server.js</span></td><td>نقطة التشغيل وتركيب المسارات</td><td>٦٢ سطر</td></tr>
+        <tr><td><span class="en">scoreboard.js</span></td><td>سحب المباريات والبطولات من السكوربورد</td><td>٥٦ سطر</td></tr>
+      </tbody>
+      <tfoot><tr><td colspan="2">إجمالي كود المشروع</td><td>≈ ٣١٤٠ سطر</td></tr></tfoot>
+    </table>
+
+    <h3 style="margin:16px 0 4px;color:var(--table-deep);font-size:15px;">مسارات الخادم <span class="en" style="font-weight:400;color:var(--muted)">(API Endpoints)</span></h3>
+    <table class="rows">
+      <thead><tr><th>المسار</th><th>الوظيفة</th></tr></thead>
+      <tbody>
+        <tr><td><span class="en">/api/referees</span></td><td>إدارة الحكّام (إضافة، تعديل، حذف، استيراد)</td></tr>
+        <tr><td><span class="en">/api/tournaments</span></td><td>إدارة البطولات (فترة، مكان، رابط قروب، استيراد)</td></tr>
+        <tr><td><span class="en">/api/matches</span></td><td>إدارة المباريات واستيرادها من السكوربورد</td></tr>
+        <tr><td><span class="en">/api/assignments</span></td><td>التكاليف: إنشاء، جماعي، إعادة إرسال، إلغاء، تسجيل يدوي</td></tr>
+        <tr><td><span class="en">/r/:token</span></td><td>صفحة رد الحكم عبر رابط سرّي</td></tr>
+        <tr><td><span class="en">/webhook</span></td><td>ويبهوك واتساب: تحقّق الاشتراك واستقبال الردود</td></tr>
+        <tr><td><span class="en">/api/status · /health</span></td><td>حالة النظام ونبض بقاء الخدمة</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- 5 -->
+  <section>
+    <div class="sec-head"><span class="num">٥</span><h2>بنية قاعدة البيانات <span class="en">(Schema)</span></h2></div>
+    <p>التخزين مبني على أربع مجموعات <span class="en">(collections)</span> بنفس الشكل في الملف المحلي وفي <span class="en">Firestore</span>:</p>
+    <pre><span class="c">// referees — الحكّام</span>
+{ "id":"uuid", "name":"اسم الحكم", "refereeNumber":"12",
+  "phone":"9665xxxxxxxx", "active":true, "createdAt":"ISO-date" }
+
+<span class="c">// tournaments — البطولات</span>
+{ "id":"uuid", "name":"اسم البطولة", "city":"", "venue":"",
+  "startDate":"YYYY-MM-DD", "endDate":"YYYY-MM-DD",
+  "groupLink":"https://... رابط قروب واتساب", "source":"scoreboard" }
+
+<span class="c">// matches — المباريات</span>
+{ "id":"uuid", "tournamentId":"uuid", "clubA":"نادٍ", "clubB":"نادٍ",
+  "startTime":"", "table":"", "round":"", "category":"",
+  "sourceKey":"مفتاح من السكوربورد", "source":"scoreboard" }
+
+<span class="c">// assignments — التكاليف</span>
+{ "id":"uuid", "refereeId":"uuid", "tournamentId":"uuid",
+  "role":"حكم بطولة", "status":"sent", "token":"رمز-سري-للرابط",
+  "sentAt":"ISO", "respondedAt":"ISO", "responseVia":"واتساب|رابط|يدوي",
+  "waMessageId":"...", "autoSent":true, "error":null }</pre>
+  </section>
+
+  <!-- 6 -->
+  <section>
+    <div class="sec-head"><span class="num">٦</span><h2>آلية العمل والربط</h2></div>
+    <p><strong>١) دورة التكليف:</strong> إنشاء بطولة وإضافة الحكّام ← إنشاء تكليف لحكم (يمنع النظام تكرار تكليف قائم) ← الإرسال عبر واتساب ← رد الحكم ← تحديث الحالة فوراً في اللوحة + رسالة تأكيد للحكم.</p>
+    <p><strong>٢) فصل الكتابة عن الواجهة:</strong> المتصفّح يستدعي <span class="en">API</span> الخادم فقط، والخادم وحده يكتب في التخزين عبر طبقة <span class="en">store</span> موحّدة (ملف محلي أو <span class="en">Firestore</span>).</p>
+    <p><strong>٣) الربط مع واتساب:</strong> يُرسَل قالب معتمد بزرّي رد سريع، ويعود الرد إلى <span class="en">/webhook</span> بحمولة <code class="k">ACCEPT:&lt;id&gt;</code> أو <code class="k">DECLINE:&lt;id&gt;</code>؛ ويُرسَل تأكيد نصّي مجاني للحكم داخل نافذة الـ٢٤ ساعة.</p>
+    <p><strong>٤) المسار البديل (رابط الرد):</strong> إذا لم يُفعّل واتساب، لكل تكليف رابط سرّي <span class="en">/r/:token</span> يفتح صفحة فيها زرّا التوفّر والاعتذار، فيُسجَّل الرد بنفس الأثر.</p>
+    <p><strong>٥) مهلة الرد:</strong> مهمّة دورية كل ١٠ دقائق تحوّل التكاليف التي تجاوزت مهلة الرد (٦ ساعات افتراضياً) إلى الحالة <code class="k">expired</code>.</p>
+    <p><strong>٦) التكامل مع السكوربورد:</strong> يقرأ النظام <span class="en">matches.json</span> من <span class="en">Firebase Realtime Database</span> الخاصة بالسكوربورد لاستيراد البطولات والمباريات دفعة واحدة.</p>
+  </section>
+
+  <!-- 7 -->
+  <section>
+    <div class="sec-head"><span class="num">٧</span><h2>الإرسال عبر واتساب والتكلفة</h2></div>
+    <p>يعتمد النظام على قالب واتساب من فئة <strong>المنفعة</strong> باسم <span class="en">referee_availability_ar</span> باللغة العربية، مع زرّي رد سريع (الأول للتوفّر والثاني للاعتذار). ولكل بطولة رابط <strong>قروب واتساب</strong> اختياري يظهر للحكم بعد قبوله التكليف.</p>
+    <table class="rows">
+      <thead><tr><th>البند</th><th>التكلفة</th></tr></thead>
+      <tbody>
+        <tr><td>رسالة التكليف الواحدة</td><td>≈ ٠٫٠٤ ريال</td></tr>
+        <tr><td>رد الحكم بالقبول أو الاعتذار</td><td>مجاني</td></tr>
+        <tr><td>رسالة التأكيد بعد رده (داخل ٢٤ ساعة)</td><td>مجانية</td></tr>
+        <tr><td>اشتراك شهري</td><td>لا يوجد</td></tr>
+      </tbody>
+      <tfoot><tr><td>بطولة فيها ٣٠٠ تكليف</td><td>≈ ١٢ ريال</td></tr></tfoot>
+    </table>
+  </section>
+
+  <!-- 8 -->
+  <section>
+    <div class="sec-head"><span class="num">٨</span><h2>المزايا الوظيفية</h2></div>
+    <ul>
+      <li><strong>تكليف فردي وجماعي:</strong> ترشيح حكم واحد أو إرسال دفعة لعدة حكّام في بطولة واحدة، مع منع تكرار التكاليف القائمة.</li>
+      <li><strong>إدارة كاملة للتكليف:</strong> إعادة الإرسال، الإلغاء، وتسجيل الرد يدوياً إن ردّ الحكم هاتفياً.</li>
+      <li><strong>استيراد مرن:</strong> إضافة الحكّام والبطولات والمباريات من نص، أو من ملف <span class="en">Excel</span>، أو مباشرة من السكوربورد.</li>
+      <li><strong>متابعة لحظية للحالات:</strong> <span class="en">pending</span> قيد الإرسال · <span class="en">sent</span> بانتظار الرد · <span class="en">accepted</span> متوفّر · <span class="en">declined</span> اعتذر · <span class="en">expired</span> انتهت المهلة · <span class="en">cancelled</span> ملغى · <span class="en">failed</span> فشل الإرسال.</li>
+      <li><strong>صفحة رد بسيطة للحكم</strong> برابط خاص، وزر انضمام لقروب البطولة عند القبول.</li>
+    </ul>
+  </section>
+
+  <!-- 9 -->
+  <section>
+    <div class="sec-head"><span class="num">٩</span><h2>النموذج الأمني</h2></div>
+    <ul>
+      <li>كل رابط رد يحمل <strong>رمزاً سرّياً غير قابل للتخمين</strong> (<span class="en">24-byte base64url</span>)، وهو وحده ما يحمي صفحة الرد العامة.</li>
+      <li>التحقق من <strong>توقيع ميتا</strong> على كل ويبهوك عبر <span class="en">HMAC-SHA256</span>، إضافة إلى <span class="en">verify token</span> لتأكيد الاشتراك.</li>
+      <li>المفاتيح والإعدادات الحسّاسة تُقرأ من <strong>متغيّرات البيئة</strong> <span class="en">(Environment Variables)</span>؛ ومفتاح خدمة <span class="en">Firebase</span> يُخزَّن في <span class="en">FIREBASE_SERVICE_ACCOUNT</span> فقط.</li>
+      <li>الخادم لا يفتح مجلّد المشروع كاملاً، بل يقدّم ملفات الواجهة بالاسم حتى لا تنكشف ملفات الخادم.</li>
+      <li>حماية اللوحة اختيارياً عبر <span class="en">ADMIN_PASSWORD</span> و<span class="en">SESSION_SECRET</span> عند النشر.</li>
+    </ul>
+  </section>
+
+  <div class="foot">
+    <span>وثيقة تقنية · نظام تكليف حكّام تنس الطاولة</span>
+    <span>الاتحاد السعودي لكرة الطاولة</span>
+  </div>
+
+</div>
+</body>
+</html>
