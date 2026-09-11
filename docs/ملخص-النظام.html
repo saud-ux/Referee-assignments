@@ -106,6 +106,14 @@
   }
   .arch strong { color: var(--ball); }
 
+  .note-box {
+    background: #fff6f0; border: 1px solid #f0d3c2; border-inline-start: 4px solid var(--ball);
+    border-radius: 11px; padding: 13px 16px; margin: 12px 0 4px; font-size: 14px;
+  }
+  .note-box h3 { margin: 0 0 6px; font-size: 14.5px; color: var(--ball); }
+  .note-box p { margin: 0 0 6px; }
+  .note-box p:last-child { margin: 0; }
+
   .tags { display: flex; flex-wrap: wrap; gap: 7px; margin: 8px 0 4px; }
   .tag {
     background: #fff; border: 1px solid var(--line); border-radius: 999px;
@@ -266,6 +274,11 @@
   <section>
     <div class="sec-head"><span class="num">٧</span><h2>الإرسال عبر واتساب والتكلفة</h2></div>
     <p>يعتمد النظام على قالب واتساب من فئة <strong>المنفعة</strong> باسم <span class="en">referee_availability_ar</span> باللغة العربية، مع زرّي رد سريع (الأول للتوفّر والثاني للاعتذار). ولكل بطولة رابط <strong>قروب واتساب</strong> اختياري يظهر للحكم بعد قبوله التكليف.</p>
+    <div class="note-box">
+      <h3>ربط واتساب عند اعتماد النظام</h3>
+      <p>يبدأ النظام في <strong>الوضع التجريبي</strong> دون واتساب، ويُفعَّل الربط الفعلي مع واتساب <strong>عند تعميد/اعتماد استخدام النظام</strong> رسمياً — عندها تُرسَل التكاليف تلقائياً بدل الرابط، وتصل ردود الحكّام مباشرة عبر أزرار واتساب.</p>
+      <p>وضمن هذا الربط، سيُنشِئ النظام <strong>قروب واتساب باسم البطولة</strong> تلقائياً، ويُضاف إليه كل حكم <strong>عند موافقته على التكليف</strong> — فيجتمع حكّام كل بطولة في قروبها الخاص دون إنشاء يدوي أو نسخ روابط.</p>
+    </div>
     <table class="rows">
       <thead><tr><th>البند</th><th>التكلفة</th></tr></thead>
       <tbody>
