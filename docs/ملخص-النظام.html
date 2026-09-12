@@ -161,7 +161,7 @@
       <li>يعمل بالكامل عبر الإنترنت — كل ما يحتاجه الحكم متصفّح لفتح رابط الرد، دون تثبيت أي تطبيق.</li>
       <li>جاهز للتشغيل الفعلي في البطولات: تُدار كل التكاليف والردود من لوحة تحكم واحدة، وتظهر ردود الحكّام فيها <strong>لحظياً</strong> دون تحديث الصفحة.</li>
       <li>يعمل على أي جهاز فيه متصفح (لابتوب، جوال، تابلت) للوحة التحكم ولصفحة رد الحكم على السواء.</li>
-      <li>قابل للنشر على استضافة دائمة (مثل <span class="en">Render</span>) لاستقبال الويبهوك، وبتكلفة تشغيل منخفضة.</li>
+      <li>تكلفة تشغيل منخفضة، ويعمل بواجهة عربية كاملة تدعم الاتجاه من اليمين إلى اليسار على كل الشاشات.</li>
     </ul>
   </section>
 
@@ -190,8 +190,8 @@
         <p>سحب البطولات والمباريات من <span class="en">Firebase Realtime Database</span> الخاصة بنظام السكوربورد.</p>
       </div>
       <div class="card">
-        <h3>الاستضافة</h3>
-        <p>الخادم يقدّم اللوحة و<span class="en">API</span> والويبهوك من عملية واحدة · مناسب لمنصّات مثل <span class="en">Render</span>.</p>
+        <h3>البنية</h3>
+        <p>الخادم يقدّم اللوحة و<span class="en">API</span> والويبهوك من عملية واحدة، بواجهة عربية كاملة تدعم الاتجاه من اليمين إلى اليسار.</p>
       </div>
     </div>
     <div class="arch">
@@ -311,7 +311,7 @@
       <li>التحقق من <strong>توقيع ميتا</strong> على كل ويبهوك عبر <span class="en">HMAC-SHA256</span>، إضافة إلى <span class="en">verify token</span> لتأكيد الاشتراك.</li>
       <li>المفاتيح والإعدادات الحسّاسة تُقرأ من <strong>متغيّرات البيئة</strong> <span class="en">(Environment Variables)</span>؛ ومفتاح خدمة <span class="en">Firebase</span> يُخزَّن في <span class="en">FIREBASE_SERVICE_ACCOUNT</span> فقط.</li>
       <li>الخادم لا يفتح مجلّد المشروع كاملاً، بل يقدّم ملفات الواجهة بالاسم حتى لا تنكشف ملفات الخادم.</li>
-      <li>حماية اللوحة اختيارياً عبر <span class="en">ADMIN_PASSWORD</span> و<span class="en">SESSION_SECRET</span> عند النشر.</li>
+      <li>حماية اللوحة عبر <span class="en">ADMIN_PASSWORD</span> و<span class="en">SESSION_SECRET</span> في متغيّرات البيئة.</li>
     </ul>
   </section>
 
